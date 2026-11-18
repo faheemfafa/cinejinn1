@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>OpenFlix (Direct Mode)</title>
+  <title>OpenFlix (Direct Stream)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
@@ -21,10 +21,10 @@
     .player-container { max-width: 1200px; margin: 0 auto; position: relative; }
     #main-video { width: 100%; max-height: 78vh; background: #000; border-radius: 6px; display: block; }
     .catalog { padding: 40px; display: flex; flex-direction: column; gap: 20px; }
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
     .movie-card { background: var(--card-bg); border-radius: 6px; overflow: hidden; cursor: pointer; padding: 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); color: #fff; text-align: left; }
     .movie-card:hover { background: var(--card-hover); }
-    .card-title { font-size: 14px; font-weight: 700; word-break: break-word; }
+    .card-title { font-size: 15px; font-weight: 700; word-break: break-word; }
     .card-url { font-size: 11px; color: var(--text-muted); word-break: break-all; }
     .state { text-align: center; padding: 60px; color: var(--text-muted); }
   </style>
@@ -33,34 +33,36 @@
 
   <header>
     <button class="logo" onclick="location.reload()">OPENFLIX</button>
-    <button class="btn btn-gray" id="btn-settings"><i class="fa-solid fa-plus"></i> Add Video Link</button>
+    <button class="btn btn-red" id="btn-settings"><i class="fa-solid fa-plus"></i> Add Video Link</button>
   </header>
 
   <div id="player-section">
     <div class="player-container">
       <video id="main-video" controls playsinline></video>
-      <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div id="player-movie-title" style="font-weight: 700; font-size: 18px;"></div>
-        <button class="btn btn-gray" id="btn-close-player"><i class="fa-solid fa-xmark"></i> Close</button>
+        <button class="btn btn-gray" id="btn-close-player"><i class="fa-solid fa-xmark"></i> Close Player</button>
       </div>
     </div>
   </div>
 
   <div class="catalog">
-    <h2>Your Direct Videos</h2>
+    <h2>My Video Library</h2>
     <div class="card-grid" id="video-grid">
       <div class="state">No videos added yet. Click "Add Video Link" above.</div>
     </div>
   </div>
 
   <div class="modal-overlay" id="settings-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:200;">
-    <div style="background:#181818; padding:24px; border-radius:8px; width:400px; display:flex; flex-direction:column; gap:12px;">
-      <h3>Add Direct Video</h3>
-      <input type="text" id="vid-name" placeholder="Movie Title (e.g. Afro Samurai)" style="padding:8px; background:#000; border:1px solid #444; color:#fff; border-radius:4px;">
-      <input type="url" id="vid-url" placeholder="Direct File URL (http://23.147.64.113/.../movie.mp4)" style="padding:8px; background:#000; border:1px solid #444; color:#fff; border-radius:4px;">
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+    <div style="background:#181818; padding:28px; border-radius:8px; width:440px; display:flex; flex-direction:column; gap:14px;">
+      <h3>Add Direct Video Link</h3>
+      <label style="font-size:12px; color:#aaa;">Movie or Video Title</label>
+      <input type="text" id="vid-name" placeholder="e.g. Afro Samurai" style="padding:10px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; outline:none;">
+      <label style="font-size:12px; color:#aaa;">Direct File URL</label>
+      <input type="url" id="vid-url" placeholder="http://23.147.64.113/.../movie.mp4" style="padding:10px; background:#000; border:1px solid #444; color:#fff; border-radius:4px; outline:none;">
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
         <button class="btn btn-gray" onclick="$('settings-modal').style.display='none'">Cancel</button>
-        <button class="btn btn-red" id="btn-save-vid">Add Video</button>
+        <button class="btn btn-red" id="btn-save-vid">Save Video</button>
       </div>
     </div>
   </div>
@@ -93,7 +95,7 @@
       $('player-movie-title').textContent = v.name;
       video.src = v.url;
       $('player-section').style.display = 'block';
-      video.play().catch(err => alert("Playback error: " + err.message));
+      video.play().catch(err => alert("Playback error: " + err.message + "\n\nNote: Browsers block HTTP video inside HTTPS pages. Use a browser extension that allows insecure content or host this page over HTTP."));
     }
 
     $('btn-close-player').addEventListener('click', () => {
@@ -103,9 +105,9 @@
 
     $('btn-settings').addEventListener('click', () => $('settings-modal').style.display = 'flex');
     $('btn-save-vid').addEventListener('click', () => {
-      const name = $('vid-name').value.trim();
+      const name = $('vid-name'].value.trim();
       const url = $('vid-url').value.trim();
-      if (!name || !url) return alert('Fill in both fields');
+      if (!name || !url) return alert('Please fill in both fields.');
       videos.push({ name, url });
       localStorage.setItem('OPENFLIX_DIRECT_VIDEOS', JSON.stringify(videos));
       $('vid-name').value = ''; $('vid-url').value = '';
