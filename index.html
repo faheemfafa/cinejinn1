@@ -875,7 +875,7 @@
     }
 
     function m3uUrl(it) {   // a tiny playlist file: VLC, PotPlayer, IINA, MPV... all open it with a double-click
-      return URL.createObjectURL(new Blob(['#EXTM3U\n#EXTINF:-1,' + it.cleanTitle + '\n' + it.url + '\n'], { type: 'audio/x-mpegurl' }));
+      return URL.createObjectURL(new Blob(['#EXTM3U\n#EXTINF:-1,' + it.cleanTitle + '\n' + (it.original || it.url) + '\n'], { type: 'audio/x-mpegurl' }));
     }
 
     let owItem = null, owBlob = '';
@@ -887,7 +887,7 @@
       owBlob = m3uUrl(it);
       const desktop = PLATFORM === 'mac' || PLATFORM === 'windows' || PLATFORM === 'other';
       menu.innerHTML = '<div class="ow-head">Free player apps</div>' +
-        playerApps(it.url).map(a => '<a role="menuitem" href="' + esc(a[1]) + '" target="_top"><i class="fa-solid fa-circle-play"></i> ' + esc(a[0]) + '</a>').join('') +
+        playerApps(it.original || it.url).map(a => '<a role="menuitem" href="' + esc(a[1]) + '" target="_top"><i class="fa-solid fa-circle-play"></i> ' + esc(a[0]) + '</a>').join('') +
         (desktop ? '<div class="ow-note">Nothing happens? Your player may not accept web links: use the playlist file below instead.</div>' : '') +
         // Online players run in your browser, so they play the same formats as OpenFlix, and the site sees the link you send.
         '<hr><div class="ow-head">Free online players</div>' +
@@ -1199,7 +1199,8 @@
         warmUrl = ''; video.removeAttribute('src'); video.load();
         return playerMsg('This file is on an http:// server, which browsers block inside this page. Use Open in New Tab or Open with…, or serve your NAS over https.');
       }
-      playerMsg(['MP4', 'M4V', 'WEBM', 'OGV', 'MOV'].includes(it.ext) ? '' : it.ext + ' files often play without sound or not at all in browsers. Use Open with… (VLC, Infuse...), or convert them with faststart.sh.');
+      playerMsg(['MP4', 'M4V', 'WEBM', 'OGV', 'MOV'].includes(it.ext) ? '' : it.ext + " files often won't play (or play without sound) in browsers. " +
+        'If so, use Open with… (VLC), or run faststart.sh on this folder once so OpenFlix plays an MP4 copy instead.');
       if (warmUrl !== it.url) {   // not pre-buffered yet
         video.src = it.url;
         const w = watch[it.url];
@@ -1216,7 +1217,8 @@
       if (!playingItem || !video.getAttribute('src')) return;
       playerMsg(['MP4', 'M4V', 'WEBM', 'OGV'].includes(playingItem.ext)
         ? 'Could not load this video. The server may be offline, slow, or blocking it. Try Open in New Tab or Open with….'
-        : 'The browser could not play this ' + playingItem.ext + ' file. Use Open with… (VLC plays it), or convert it to MP4 (H.264 + AAC).');
+        : "Browsers can't play this " + playingItem.ext + ' file. Watch it now with Open with… (VLC, Infuse...). To play it here: run faststart.sh on its folder ' +
+          'once, and OpenFlix will play the MP4 copy automatically.');
     });
     video.addEventListener('waiting', () => { if (video.currentTime < 1) playerMsg('Buffering... a slow start usually means the server is slow or the MP4 is not "faststart".'); });
     video.addEventListener('playing', () => { if (/^Buffering/.test($('player-msg').textContent)) playerMsg(''); });
