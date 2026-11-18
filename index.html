@@ -11,6 +11,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="OpenFlix">
+  <!-- Don't tell video servers which site is asking: many file servers refuse requests "linked" from another website. -->
+  <meta name="referrer" content="no-referrer">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://image.tmdb.org">
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
@@ -1413,7 +1415,20 @@
         openflixApi.call('boot', [], c).then(r => {
           try { localStorage.setItem('OPENFLIX_API', JSON.stringify(c)); } catch (e) {}
           boot(r);
-        }, e => { $('api-msg').style.color = '#ff6b6b'; $('api-msg').textContent = "Couldn't connect: " + e.message; });
+        }, e => {
+          $('api-msg').style.color = '#ff6b6b';
+          if (!(e instanceof TypeError) && !(e instanceof SyntaxError)) { $('api-msg').textContent = "Couldn't connect: " + e.message; return; }
+          // "Failed to fetch" / not JSON: Google answered with an error or sign-in page. The ping tells us which.
+          fetch(c.url + '?api=ping').then(r => r.json()).then(p => {
+            $('api-msg').innerHTML = p.familyCodeSet
+              ? "The link works, but the app's request failed. In Apps Script make sure you deployed a <b>New version</b> after pasting the latest Code.gs, then try again."
+              : 'The link works, but no family code is set yet. In the spreadsheet: <b>OpenFlix menu → Set family code</b>, then try again.';
+          }, () => {
+            $('api-msg').innerHTML = "Your web app link didn't answer. In Apps Script: <b>Deploy → Manage deployments → Edit</b> → Version: <b>New version</b>, " +
+              'Execute as <b>Me</b>, Who has access <b>Anyone</b> (not "Anyone with Google account") → <b>Deploy</b>. ' +
+              'Then open your link with <b>?api=ping</b> added at the end: it should show <code>"ok":true</code>.';
+          });
+        });
       });
     }
 
