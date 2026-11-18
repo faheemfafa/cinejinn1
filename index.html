@@ -2,8 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>OpenFlix (Full Featured)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenFlix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#141414">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="OpenFlix">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://image.tmdb.org">
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
@@ -36,14 +43,15 @@
     .btn-red { background: var(--red); color: #fff; } .btn-red:hover { background: var(--red-hover); }
     .btn-white { background: #fff; color: #000; } .btn-white:hover { background: rgba(255,255,255,0.75); }
     .btn-gray { background: rgba(109,109,110,0.7); color: #fff; } .btn-gray:hover { background: rgba(109,109,110,0.4); }
+    .btn:focus-visible, .movie-card:focus-visible, .nav-links button:focus-visible, .crumb:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
     .source-bar { padding: 8px 40px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
                   background: rgba(20,20,20,0.9); font-size: 13px; border-bottom: 1px solid var(--border); }
     .source-select { background: #000; border: 1px solid #444; color: #fff; padding: 6px 12px; border-radius: 4px; outline: none; cursor: pointer; }
-    .breadcrumbs { color: var(--text-muted); display: flex; align-items: center; gap: 8px; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .breadcrumbs { color: var(--text-muted); display: flex; align-items: center; gap: 8px; min-width: 0; }
     .crumb { color: #fff; cursor: pointer; background: none; border: 0; font: inherit; }
     .crumb:hover { text-decoration: underline; }
-    .crumb.here { color: var(--text-muted); cursor: default; text-decoration: none; }
+    .crumb-here { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40vw; }
 
     .hero { position: relative; height: 55vh; min-height: 380px; max-height: 560px; background: linear-gradient(135deg, #1f1c2c 0%, #111 100%);
             background-size: cover; background-position: center; display: flex; align-items: center; padding: 0 40px; margin-bottom: -50px; }
@@ -52,29 +60,50 @@
     .hero-content { position: relative; z-index: 2; max-width: 600px; }
     .hero-badge { display: inline-block; color: var(--red); font-weight: 800; font-size: 13px; letter-spacing: 2px; margin-bottom: 8px; }
     .hero-title { font-size: 40px; font-weight: 900; line-height: 1.1; margin-bottom: 12px; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); }
-    .hero-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+    .hero-meta, .modal-meta { display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; margin-bottom: 14px; }
     .rating { color: #46d369; }
     .tag { border: 1px solid rgba(255,255,255,0.4); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+    .tag:empty, .rating:empty { display: none; }
     .hero-desc { font-size: 15px; line-height: 1.4; color: #ddd; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3;
                  -webkit-box-orient: vertical; overflow: hidden; text-shadow: 1px 1px 4px rgba(0,0,0,0.8); }
     .hero-actions { display: flex; gap: 12px; }
 
     #player-section { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.96); padding: 24px 40px; overflow-y: auto; }
     .player-container { max-width: 1200px; margin: 0 auto; position: relative; }
+    :root { --sub-size: 100%; }
+    video::cue { font-size: var(--sub-size); }
+    .plyr__captions .plyr__caption { font-size: var(--sub-size); }
+    #osd { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(0,0,0,0.75); color: #fff;
+           padding: 10px 18px; border-radius: 8px; font-size: 16px; font-weight: 700; pointer-events: none; opacity: 0; transition: opacity .2s; }
+    #osd.show { opacity: 1; }
+    #btn-skip-intro { position: absolute; right: 16px; top: 16px; z-index: 20; display: none; }
+    .pro-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 10px; }
+    .pro-row > span:first-child { width: 96px; font-size: 12px; color: var(--text-muted); }
+    .pro-row button.chip { width: auto; padding: 4px 9px; border: 1px solid #444; border-radius: 4px; background: #111; font-size: 12px; }
+    .pro-row button.chip.on { background: var(--red); border-color: var(--red); }
+    .pro-row select { background: #111; color: #fff; border: 1px solid #444; border-radius: 4px; padding: 4px 6px; font-size: 12px; }
+    .pro-val { font-size: 12px; min-width: 48px; text-align: center; }
     #main-video { width: 100%; max-height: 78vh; background: #000; border-radius: 6px; display: block; }
     .plyr { --plyr-color-main: #E50914; border-radius: 6px; }
     .plyr video { max-height: 78vh; }
+    video::cue, .plyr__caption { font-size: clamp(16px, 2.4vw, 28px); background: rgba(0,0,0,0.7); }
     .player-title { font-size: 18px; font-weight: 700; }
+    .player-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    #player-msg { display: none; margin-top: 12px; padding: 10px 14px; border-left: 4px solid var(--warn); background: #2a1d07; border-radius: 4px; font-size: 13px; line-height: 1.5; }
     .player-controls-bar { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 
     .catalog { position: relative; z-index: 5; padding: 20px 0 60px 0; display: flex; flex-direction: column; gap: 36px; }
-    .grid-section { padding: 0 40px; }
+    .row-section { padding: 0 40px; position: relative; }
     .row-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; padding: 14px 0; }
-    .movie-card { height: auto; aspect-ratio: 2 / 3; background: var(--card-bg); border-radius: 4px; overflow: hidden; cursor: pointer; position: relative;
+    .row-carousel { position: relative; display: flex; align-items: center; }
+    .row-cards { display: flex; gap: 10px; overflow-x: auto; scroll-behavior: smooth; padding: 14px 4px; scrollbar-width: none; }
+    .row-cards::-webkit-scrollbar { display: none; }
+
+    .movie-card { flex: 0 0 180px; height: 270px; background: var(--card-bg); border-radius: 4px; overflow: hidden; cursor: pointer; position: relative;
                   transition: transform 0.25s cubic-bezier(0.2,0,0,1), box-shadow 0.25s; box-shadow: 0 2px 10px rgba(0,0,0,0.5);
                   display: flex; flex-direction: column; justify-content: flex-end; border: 0; text-align: left; color: inherit; font: inherit; }
-    .movie-card:hover { transform: scale(1.04); box-shadow: 0 8px 24px rgba(0,0,0,0.9); z-index: 10; }
+    .movie-card:hover { transform: scale(1.08) translateY(-6px); box-shadow: 0 8px 24px rgba(0,0,0,0.9); z-index: 10; }
     .card-poster { position: absolute; inset: 0; background-size: cover; background-position: center; background-color: #222; }
     .card-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.3) 50%, transparent 100%); }
     .card-info { position: relative; z-index: 2; padding: 12px; }
@@ -82,35 +111,90 @@
                   border-radius: 2px; margin-bottom: 4px; text-transform: uppercase; }
     .card-title { font-size: 13px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); word-break: break-word; }
     .card-meta { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+    .progress-track { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: rgba(255,255,255,0.25); z-index: 3; }
+    .progress-fill { height: 100%; background: var(--red); }
+
+    .arrow-btn { position: absolute; top: 0; bottom: 0; width: 44px; background: rgba(0,0,0,0.5); border: none; color: #fff; font-size: 22px;
+                 display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.2s, background 0.2s; z-index: 8; }
+    .row-carousel:hover .arrow-btn, .arrow-btn:focus-visible { opacity: 1; }
+    .arrow-btn:hover { background: rgba(0,0,0,0.8); }
+    .arrow-left { left: 0; } .arrow-right { right: 0; }
+    @media (hover: none) { .arrow-btn { display: none; } }
 
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 200;
                      align-items: center; justify-content: center; padding: 20px; }
-    .netflix-modal { background: var(--card-bg); border-radius: 8px; width: 100%; max-width: 680px; box-shadow: 0 12px 36px rgba(0,0,0,0.9); position: relative; max-height: calc(100dvh - 40px); overflow-y: auto; }
+    .netflix-modal { background: var(--card-bg); border-radius: 8px; width: 100%; max-width: 680px; box-shadow: 0 12px 36px rgba(0,0,0,0.9); position: relative;
+                     max-height: calc(100dvh - 40px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .modal-banner { height: 240px; background-size: cover; background-position: center; position: relative; }
     .modal-banner-gradient { position: absolute; inset: 0; background: linear-gradient(to top, var(--card-bg) 0%, rgba(0,0,0,0.4) 60%, transparent 100%); }
-    .modal-close { position: absolute; top: 14px; right: 14px; background: #181818; border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; z-index: 5; }
+    .modal-close { position: absolute; top: 14px; right: 14px; background: #181818; border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%;
+                   cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; z-index: 5; }
     .modal-body { padding: 24px; }
     .modal-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
     .modal-desc { font-size: 14px; line-height: 1.6; color: #bbb; margin-bottom: 24px; }
     .modal-file { font-size: 11px; color: #777; word-break: break-all; margin-bottom: 16px; }
     .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    .settings-dialog { background: #181818; padding: 28px; border-radius: 8px; width: 100%; max-width: 540px; }
+    /* Tall popups scroll inside themselves instead of running off the screen */
+    .settings-dialog { background: #181818; padding: 28px; border-radius: 8px; width: 100%; max-width: 540px;
+                       max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .settings-dialog input { width: 100%; background: #000; border: 1px solid #444; padding: 10px; border-radius: 4px; color: #fff; margin-bottom: 12px; outline: none; }
     .settings-dialog label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; }
     .source-list { max-height: 200px; overflow-y: auto; margin-bottom: 16px; }
-    .source-item { display: flex; justify-content: space-between; align-items: center; background: #242424; padding: 10px 14px; border-radius: 4px; margin-bottom: 8px; font-size: 13px; gap: 10px; word-break: break-all; }
+    .source-item { display: flex; justify-content: space-between; align-items: center; background: #242424; padding: 10px 14px; border-radius: 4px;
+                   margin-bottom: 8px; font-size: 13px; gap: 10px; word-break: break-all; }
+    #settings-msg { font-size: 12px; min-height: 16px; margin-bottom: 10px; }
     .state { text-align: center; padding: 60px 40px; font-size: 16px; color: var(--text-muted); }
     .state.err { color: #ff6b6b; }
+    .grid-section { padding: 0 40px; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 40px; color: var(--text-muted); font-size: 13px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; padding: 14px 0; }
+    .card-grid .movie-card { height: auto; aspect-ratio: 2 / 3; }
+    .card-grid .movie-card:hover { transform: scale(1.04); }
+    .card-meta span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .more-wrap { text-align: center; padding: 10px 0 0; }
+    .view-toggle { display: inline-flex; border: 1px solid #444; border-radius: 4px; overflow: hidden; }
+    .view-toggle button { background: #000; color: #aaa; border: 0; padding: 6px 10px; cursor: pointer; font-size: 13px; }
+    .view-toggle button.active { background: #333; color: #fff; }
+    .list-view { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; }
+    .list-row { display: flex; align-items: center; gap: 14px; width: 100%; background: var(--card-bg); border: 0; border-radius: 6px;
+                padding: 8px 14px 8px 8px; color: inherit; font: inherit; text-align: left; cursor: pointer; position: relative; overflow: hidden; }
+    .list-row:hover, .list-row:focus-visible { background: var(--card-hover); outline: none; }
+    .list-row:focus-visible { box-shadow: inset 0 0 0 2px #fff; }
+    .list-thumb { flex: 0 0 46px; height: 68px; border-radius: 4px; background-color: #222; background-size: cover; background-position: center; }
+    .list-main { flex: 1; min-width: 0; }
+    .list-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .list-badge { font-size: 10px; font-weight: 700; background: rgba(229,9,20,0.85); color: #fff; padding: 2px 6px; border-radius: 2px; text-transform: uppercase; }
+    .list-row > .fa-solid { color: var(--text-muted); width: 16px; text-align: center; }
+    .btn.small { padding: 5px 10px; font-size: 12px; }
+    .ow-menu { position: fixed; z-index: 400; min-width: 250px; max-width: calc(100vw - 20px); background: #222; border: 1px solid #444;
+               border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); padding: 6px; }
+    .ow-menu a, .ow-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; color: #fff; text-decoration: none;
+               background: none; border: 0; font: inherit; font-size: 14px; text-align: left; cursor: pointer; border-radius: 4px; }
+    .ow-menu a:hover, .ow-menu button:hover, .ow-menu a:focus-visible, .ow-menu button:focus-visible { background: #333; outline: none; }
+    .ow-menu .ow-head { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; padding: 6px 10px 4px; }
+    .ow-menu .ow-note { font-size: 11px; color: var(--text-muted); padding: 4px 10px 6px; line-height: 1.4; }
+    .ow-menu hr { border: 0; border-top: 1px solid #383838; margin: 6px 0; }
+    .breadcrumbs { overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .crumb.here { color: var(--text-muted); cursor: default; text-decoration: none; }
+    @media (max-width: 700px) {
+      header, .source-bar, .row-section, .hero, #player-section, .grid-section, .toolbar { padding-left: 16px; padding-right: 16px; }
+      .card-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+      header { position: static; }   /* don't let the tall wrapped header cover the screen on phones */
+      .hero-title { font-size: 28px; }
+      .movie-card { flex-basis: 140px; height: 210px; }
+    }
   </style>
 </head>
 <body>
 
   <header>
     <div class="brand-group">
-      <button class="logo" id="logo"><i class="fa-solid fa-play"></i> OPENFLIX</button>
+      <button class="logo" id="logo" aria-label="Back to top"><i class="fa-solid fa-play"></i> OPENFLIX</button>
       <ul class="nav-links" id="nav">
         <li><button class="active" data-nav="all">Home</button></li>
+        <li><button data-nav="allvideos">All Videos</button></li>
         <li><button data-nav="folder">Folders</button></li>
         <li><button data-nav="mylist">My List</button></li>
       </ul>
@@ -118,9 +202,9 @@
     <div class="header-actions">
       <div class="search-box">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="search-input" placeholder="Filter titles..." aria-label="Search">
+        <input type="text" id="search-input" placeholder="Filter titles · Enter = Internet Archive" aria-label="Search">
       </div>
-      <button class="btn btn-gray" id="btn-settings"><i class="fa-solid fa-gear"></i> Settings & Sources</button>
+      <button class="btn btn-gray" id="btn-settings"><i class="fa-solid fa-gear"></i> Sources</button>
     </div>
   </header>
 
@@ -134,11 +218,30 @@
 
   <div id="player-section">
     <div class="player-container">
-      <video id="main-video" controls playsinline preload="metadata"></video>
+      <video id="main-video" controls playsinline preload="auto"></video>
+      <div id="osd" aria-live="polite"></div>
+      <button class="btn btn-white small" id="btn-skip-intro"><i class="fa-solid fa-forward"></i> Skip intro</button>
+      <div id="player-msg" role="status"></div>
       <div class="player-controls-bar">
-        <div class="player-title" id="player-movie-title">Movie Title</div>
+        <div>
+          <div class="player-title" id="player-movie-title">Movie Title</div>
+          <div class="player-sub" id="player-next-up"></div>
+          <div class="player-sub">Space play/pause · ← → 10 s · [ ] speed · G H subtitle timing · Z picture · F full screen · N next · Esc close</div>
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <a class="btn btn-red" id="player-new-tab" href="#" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab</a>
+          <button class="btn btn-gray" id="btn-pro" aria-haspopup="dialog"><i class="fa-solid fa-sliders"></i> Player settings</button>
+          <select class="source-select" id="player-engine" aria-label="Player" title="Switch player (keeps your place)">
+            <option value="plyr">OpenFlix player</option>
+            <option value="builtin">Browser's built-in player</option>
+          </select>
+          <select class="source-select" id="sub-select" aria-label="Subtitles"></select>
+          <select class="source-select" id="audio-select" aria-label="Audio language" style="display:none;"></select>
+          <input type="file" id="sub-file" accept=".srt,.vtt,text/vtt" hidden>
+          <button class="btn btn-gray" id="btn-prev" aria-label="Previous video"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="btn btn-white" id="btn-next"><i class="fa-solid fa-forward-step"></i> Next</button>
+          <a class="btn btn-red" id="player-new-tab" href="#" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab</a>
+          <button class="btn btn-gray" id="player-openwith" aria-haspopup="menu"><i class="fa-solid fa-up-right-from-square"></i> Open with… <i class="fa-solid fa-caret-down"></i></button>
+          <button class="btn btn-gray" id="btn-copy"><i class="fa-solid fa-copy"></i> <span>Copy Link</span></button>
           <button class="btn btn-gray" id="btn-close-player"><i class="fa-solid fa-xmark"></i> Close</button>
         </div>
       </div>
@@ -150,11 +253,12 @@
     <div class="hero-content">
       <div class="hero-badge">FEATURED</div>
       <div class="hero-title" id="hero-title">Your Library</div>
-      <div class="hero-meta" id="hero-meta-bar" style="display:none;">
-        <span class="rating" id="hero-rating">★ 0.0</span>
-        <span class="tag" id="hero-year">0000</span>
+      <div class="hero-meta">
+        <span class="rating" id="hero-rating"></span>
+        <span id="hero-year"></span>
+        <span class="tag" id="hero-quality"></span>
       </div>
-      <div class="hero-desc" id="hero-desc">Add an open directory source to get started.</div>
+      <div class="hero-desc" id="hero-desc">Your videos, ready to play.</div>
       <div class="hero-actions">
         <button class="btn btn-white" id="hero-play" disabled><i class="fa-solid fa-play"></i> Play</button>
         <button class="btn btn-gray" id="hero-info" disabled><i class="fa-solid fa-circle-info"></i> More Info</button>
@@ -163,285 +267,1166 @@
   </div>
 
   <div class="catalog" id="catalog-container">
-    <div class="state">No sources configured. Click Settings & Sources to add your directory link.</div>
+    <div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading OpenFlix Catalog...</p></div>
   </div>
 
-  <div class="modal-overlay" id="detail-modal" role="dialog">
+  <div class="modal-overlay" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="netflix-modal">
-      <button class="modal-close" data-close="detail-modal"><i class="fa-solid fa-xmark"></i></button>
+      <button class="modal-close" data-close="detail-modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       <div class="modal-banner" id="modal-banner"><div class="modal-banner-gradient"></div></div>
       <div class="modal-body">
         <div class="modal-title" id="modal-title">Movie Title</div>
-        <div class="modal-meta" id="modal-meta-row" style="display:flex; gap:12px; font-size:13px; font-weight:600; margin-bottom:12px;">
-          <span class="rating" id="modal-rating">★ 0.0</span>
-          <span class="tag" id="modal-year">0000</span>
+        <div class="modal-meta">
+          <span class="rating" id="modal-rating"></span>
+          <span id="modal-year"></span>
+          <span class="tag" id="modal-quality"></span>
         </div>
         <div class="modal-desc" id="modal-desc"></div>
         <div class="modal-file" id="modal-file"></div>
         <div class="modal-actions">
           <button class="btn btn-red" id="modal-play"><i class="fa-solid fa-play"></i> <span>Play Now</span></button>
-          <a class="btn btn-white" id="modal-new-tab" href="#" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab</a>
+          <a class="btn btn-white" id="modal-new-tab" href="#" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in New Tab</a>
+          <button class="btn btn-gray" id="modal-openwith" aria-haspopup="menu"><i class="fa-solid fa-up-right-from-square"></i> Open with… <i class="fa-solid fa-caret-down"></i></button>
           <button class="btn btn-gray" id="modal-list"><i class="fa-solid fa-plus"></i> <span>My List</span></button>
+          <button class="btn btn-gray" id="modal-forget" style="display:none;"><i class="fa-solid fa-eye-slash"></i> Remove from Continue Watching</button>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="settings-modal" role="dialog">
+  <div class="ow-menu" id="openwith-menu" role="menu" hidden></div>
+  <div class="ow-menu" id="pro-panel" role="dialog" aria-label="Player settings" hidden></div>
+
+  <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="settings-dialog">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3>OpenFlix Settings</h3>
-        <button class="modal-close" style="position:static;" data-close="settings-modal"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="settings-title">OpenFlix Settings</h3>
+        <button class="modal-close" style="position:static;" data-close="settings-modal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
-      <label>Sources (Stored in browser local storage)</label>
+      <label for="setting-tmdb-key">TMDB key (optional). Without it, posters come free from iTunes. Fix a wrong poster in the sheet's Covers tab.</label>
+      <input type="text" id="setting-tmdb-key" placeholder="Free from themoviedb.org → Settings → API" autocomplete="off">
+      <label>Search index (the Index tab of the spreadsheet)</label>
+      <div class="source-item" id="index-settings" style="display:block;margin-bottom:16px;"></div>
+      <label>Sources (saved in the spreadsheet's Sources tab, shared with the family)</label>
       <div class="source-list" id="modal-source-list"></div>
-      <input type="text" id="new-source-name" placeholder="Name (e.g. My Movies)">
-      <input type="url" id="new-source-url" placeholder="Folder URL (http://23.147.64.113/.../)">
-      <label style="margin-top:12px;">TMDB API Key (Optional, for posters & plots)</label>
-      <input type="text" id="tmdb-key-input" placeholder="Paste TMDB v3 API Key">
-      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
-        <button class="btn btn-red" id="btn-save-settings">Save & Close</button>
+      <input type="text" id="new-source-name" placeholder="Name (e.g. My NAS movies)" aria-label="Source name">
+      <input type="url" id="new-source-url" placeholder="Folder URL (https://.../)" aria-label="Source URL">
+      <label>This device</label>
+      <div class="source-item" style="margin-bottom:16px;">
+        <span>Watch history and My List are saved only on this device.
+          <button class="btn btn-gray small" id="btn-disconnect" style="margin-top:8px;"><i class="fa-solid fa-right-from-bracket"></i> Sign out of this device</button></span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="btn btn-gray small" id="btn-clear-history"><i class="fa-solid fa-trash"></i> <span>Clear history</span></button>
+          <button class="btn btn-gray small" id="btn-clear-list"><i class="fa-solid fa-trash"></i> <span>Clear My List</span></button>
+        </span>
+      </div>
+      <div id="settings-msg" role="alert"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn btn-gray" id="btn-add-source"><i class="fa-solid fa-plus"></i> Add Source</button>
+        <button class="btn btn-red" id="btn-save-settings"><i class="fa-solid fa-check"></i> Save</button>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script>
+  (function () {
+    function cfg() { try { return JSON.parse(localStorage.getItem('OPENFLIX_API') || 'null'); } catch (e) { return null; } }
+    function call(fn, args, c) {
+      c = c || cfg();
+      if (!c) return Promise.reject(new Error('Not connected yet.'));
+      // text/plain keeps this a "simple" request, so Apps Script answers without a CORS pre-check.
+      return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args, code: c.code }) })
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('The OpenFlix API answered ' + r.status)); })
+        .then(function (d) { return d.ok ? d.result : Promise.reject(new Error(d.error)); });
+    }
+    function runner(ok, fail) {
+      return new Proxy({}, { get: function (_, name) {
+        if (name === 'withSuccessHandler') return function (f) { return runner(f, fail); };
+        if (name === 'withFailureHandler') return function (f) { return runner(ok, f); };
+        return function () { call(name, Array.prototype.slice.call(arguments)).then(function (r) { if (ok) ok(r); }, function (e) { if (fail) fail(e); }); };
+      } });
+    }
+    window.google = { script: { get run() { return runner(null, null); } } };
+    window.openflixApi = { call: call, cfg: cfg };
+  })();
+  </script>
   <script>
-    let sources = JSON.parse(localStorage.getItem('OPENFLIX_SOURCES') || '[]');
-    let myList = JSON.parse(localStorage.getItem('OPENFLIX_MY_LIST') || '[]');
-    let tmdbKey = localStorage.getItem('OPENFLIX_TMDB_KEY') || '';
-    let covers = JSON.parse(localStorage.getItem('OPENFLIX_COVERS') || '{}');
+    let sources = [];
+    let tmdbKey = '';
 
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    const store = {
+      get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    };
 
-    let curUrl = '', rootUrl = '', backStack = [], allItems = [], reg = [], heroItem = null, modalItem = null;
-    let currentNav = 'all';
-    const VIDEO_EXT = ['mp4', 'm4v', 'webm', 'ogv', 'mkv', 'mov', 'avi', 'ts', 'wmv', 'flv', 'mpg', 'mpeg'];
-    const SUB_EXT = ['srt', 'vtt'];
+    let curUrl = '', rootUrl = '', backStack = [], allItems = [], reqId = 0;
+    let reg = [];                      // items behind the cards currently on screen (data-k = index)
+    let info = {};                     // TMDB results by "title|year"
+    let heroItem = null, modalItem = null, playingItem = null, lastSave = 0;
+    let myList = store.get('OPENFLIX_MY_LIST', []);
+    let watch  = store.get('OPENFLIX_WATCH_HISTORY', {});   // url -> { t, d, at, item }
 
-    function load(url, push) {
+    const infoKey = it => it.title + '|' + (it.year || '');
+    const infoOf  = it => info[infoKey(it)] || null;
+    const yearOf  = it => (infoOf(it) || {}).year || it.year || '';
+
+    /* ---------- loading folders ---------- */
+    function load(url, push, force, autoOpen) {
       if (push && curUrl) backStack.push(curUrl);
       curUrl = url;
       renderCrumbs();
-      $('catalog-container').innerHTML = '<div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading directory...</p></div>';
+      preconnect(url);
+      const my = ++reqId;
+      const cached = store.get('OPENFLIX_LAST_CATALOG', null);
+      if (cached && cached.url === url) { allItems = cached.items; showAll(); }
+      else $('catalog-container').innerHTML = '<div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading...</p></div>';
 
-      // Direct client fetch (requires CORS extension or direct access)
-      fetch(url)
-        .then(r => r.text())
-        .then(html => {
-          allItems = parseOpenDirectoryHtml(html, url);
-          fetchTmdbForItems(allItems);
-          renderCatalog(allItems);
+      google.script.run
+        .withSuccessHandler(res => {
+          if (my !== reqId) return;   // a newer click won
+          if (!res || res.error) return showError(res ? res.error : 'No reply.');
+          allItems = res.items || [];
+          store.set('OPENFLIX_LAST_CATALOG', { url: url, items: allItems.slice(0, 300) });
+          showAll();
+          // A folder holding just one video (e.g. "Trip (2023)/trip.mp4"): go straight to it.
+          if (autoOpen && allItems.length === 1 && allItems[0].type === 'video') openDetail(allItems[0]);
         })
-        .catch(err => {
-          $('catalog-container').innerHTML = '<div class="state err"><i class="fa-solid fa-triangle-exclamation"></i> Direct fetch blocked by server or CORS. Please use a CORS browser extension or direct video links.</div>';
-        });
+        .withFailureHandler(e => { if (my === reqId) showError(e.message); })
+        .fetchDirectoryContents(url, !!force);
     }
 
-    function parseOpenDirectoryHtml(html, baseUrl) {
-      const items = [], subs = [], seen = {};
-      const linkRegex = /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi;
-      let m;
-      while ((m = linkRegex.exec(html)) !== null) {
-        let href = m[2].trim();
-        let text = m[3].replace(/<[^>]+>/g, '').trim();
-        if (!href || href.startsWith('?') || href === '../' || href === '/') continue;
+    function searchArchive(q) {
+      if (curUrl) backStack.push(curUrl);
+      curUrl = '';
+      const my = ++reqId;
+      $('breadcrumbs').innerHTML = backBtn() + '<span class="crumb-here">Internet Archive: ' + esc(q) + '</span>';
+      $('catalog-container').innerHTML = '<div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i></div>';
+      google.script.run
+        .withSuccessHandler(res => { if (my !== reqId) return; if (res.error) return showError(res.error); allItems = res.items; showAll(); })
+        .withFailureHandler(e => { if (my === reqId) showError(e.message); })
+        .searchArchive(q);
+    }
 
-        let url = new URL(href, baseUrl).href;
-        if (seen[url]) continue;
-        seen[url] = true;
+    function showError(msg) {
+      allItems = [];
+      $('catalog-container').innerHTML = '<div class="state err"><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(msg) + '</div>';
+    }
 
-        let name = decodeURIComponent(url.replace(/\/$/, '').split('/').pop()) || text;
-        let ext = (name.match(/\.([a-z0-9]{2,4})$/i) || [, ''])[1].toLowerCase();
-        let isFolder = href.endsWith('/') || !ext;
+    function backBtn() { return backStack.length ? '<button class="crumb" data-back="1"><i class="fa-solid fa-chevron-left"></i> Back</button> /' : ''; }
 
-        if (isFolder) {
-          if (!url.endsWith('/')) url += '/';
-          let info = parseName_(name + '/');
-          items.push({ type: 'folder', cleanTitle: info.title, title: info.title, year: info.year, url: url });
-        } else if (VIDEO_EXT.includes(ext)) {
-          let info = parseName_(name);
-          items.push({ type: 'video', cleanTitle: info.year ? info.title + ' (' + info.year + ')' : info.title, title: info.title, year: info.year, resolution: info.resolution, url: url, ext: ext.toUpperCase() });
-        } else if (SUB_EXT.includes(ext)) {
-          subs.push({ base: name.replace(/\.[^.]+$/, ''), url: url });
-        }
+    const dec = seg => { try { return decodeURIComponent(seg); } catch (e) { return seg; } };
+    function renderCrumbs() {
+      const crumb = (url, label) => '<button class="crumb' + (url === curUrl ? ' here' : '') + '" data-url="' + esc(url) + '">' + label + '</button>';
+      let html = backBtn() + ' ' + crumb(rootUrl, '<i class="fa-solid fa-house"></i> Home');
+      if (rootUrl && curUrl.indexOf(rootUrl) === 0) {
+        let acc = rootUrl;
+        curUrl.slice(rootUrl.length).split('/').filter(Boolean).forEach(seg => { acc += seg + '/'; html += ' / ' + crumb(acc, esc(dec(seg))); });
+      } else if (curUrl !== rootUrl) {
+        html += ' / <span class="crumb-here">' + esc(dec(curUrl.replace(/\/$/, '').split('/').pop())) + '</span>';
       }
-      return items.sort((a, b) => a.type !== b.type ? (a.type === 'folder' ? -1 : 1) : a.cleanTitle.localeCompare(b.cleanTitle));
+      $('breadcrumbs').innerHTML = html +
+        ' <button class="crumb" data-refresh="1" title="Reload this folder" aria-label="Reload this folder"><i class="fa-solid fa-rotate-right"></i></button>';
     }
 
-    function parseName_(filename) {
-      let name = /\/$/.test(filename) ? filename.slice(0, -1) : filename.replace(/\.[a-z0-9]{2,4}$/i, '');
-      const year = (name.match(/[.\s(\[_](19\d\d|20\d\d)(?=[.\s)\]_]|$)/) || [, ''])[1];
-      const res = (name.match(/(2160p|1080p|720p|480p|4k|uhd)/i) || [, ''])[1]?.toUpperCase() || '';
-      return { title: name.replace(/[._\-]+/g, ' ').trim(), year: year || '', resolution: res };
+    function preconnect(url) {
+      const m = String(url).match(/^https?:\/\/[^\/]+/i); if (!m || document.querySelector('link[href="' + m[0] + '"]')) return;
+      const l = document.createElement('link'); l.rel = 'preconnect'; l.href = m[0]; document.head.appendChild(l);
     }
 
-    function fetchTmdbForItems(items) {
-      if (!tmdbKey) return;
-      items.forEach(it => {
-        const k = it.title + '|' + it.year;
-        if (covers[k]) return;
-        fetch(`https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(it.title)}${it.year ? '&year='+it.year : ''}&api_key=${tmdbKey}`)
-          .then(r => r.json())
-          .then(data => {
-            const r = (data.results || [])[0];
-            if (r) {
-              covers[k] = {
-                poster: r.poster_path ? 'https://image.tmdb.org/t/p/w342' + r.poster_path : '',
-                backdrop: r.backdrop_path ? 'https://image.tmdb.org/t/p/w1280' + r.backdrop_path : '',
-                overview: r.overview || '',
-                rating: r.vote_average ? Math.round(r.vote_average * 10) / 10 : ''
-              };
-              localStorage.setItem('OPENFLIX_COVERS', JSON.stringify(covers));
-              renderCatalog(allItems);
-            }
-          }).catch(e => {});
-      });
-    }
+    /* ---------- catalog ---------- */
+    function showAll() { setNav('all'); setupHero(allItems); renderCatalog(allItems, true); fetchInfo(allItems); }
 
-    function renderCatalog(items) {
+    function renderCatalog(items, withExtras) {
+      const c = $('catalog-container');
       reg = [];
-      let filtered = items;
-      if (currentNav === 'mylist') {
-        filtered = myList;
-      } else if (currentNav === 'folder') {
-        filtered = items.filter(i => i.type === 'folder');
-      }
-
-      const vids = filtered.filter(i => i.type === 'video'), folders = filtered.filter(i => i.type === 'folder');
       let html = '';
-      if (vids.length) html += '<div class="grid-section"><div class="row-title">Videos</div><div class="card-grid">' + vids.map(i => cardHtml(i)).join('') + '</div></div>';
-      if (folders.length) html += '<div class="grid-section"><div class="row-title">Folders</div><div class="card-grid">' + folders.map(i => cardHtml(i)).join('') + '</div></div>';
-      $('catalog-container').innerHTML = html || '<div class="state">No items found.</div>';
-      if (vids.length && !heroItem) { heroItem = vids[0]; fillHero(heroItem); }
+      if (withExtras) {
+        const cont = Object.values(watch).sort((a, b) => b.at - a.at).slice(0, 20).map(w => w.item);
+        if (cont.length) html += rowHtml('Continue Watching', cont, true,
+          '<button class="btn btn-gray small" data-action="clear-history" style="margin-left:auto;"><i class="fa-solid fa-trash"></i> <span>Clear history</span></button>');
+      }
+      const sorted = sortItems(items);
+      const vids = sorted.filter(i => i.type === 'video'), folders = sorted.filter(i => i.type === 'folder');
+      shownVideos = vids;
+      if (withExtras && myList.length) html += rowHtml('My List', myList);
+      if (vids.length || folders.length) {
+        html += '<div class="toolbar"><span>' + [vids.length ? vids.length + ' video' + (vids.length > 1 ? 's' : '') : '', folders.length ? folders.length + ' folder' + (folders.length > 1 ? 's' : '') : ''].filter(Boolean).join(' · ') + '</span>' +
+          toolsHtml() + '</div>';
+      }
+      if (vids.length)    html += gridHtml('Videos', vids);
+      if (folders.length) html += gridHtml('Folders', folders);
+      c.innerHTML = html || '<div class="state">Nothing here yet.</div>';
     }
 
-    function cardHtml(it) {
-      const k = reg.push(it) - 1, folder = it.type === 'folder';
-      const cov = covers[it.title + '|' + it.year] || {};
-      const posterStyle = cov.poster ? `background-image: url('${cov.poster}');` : '';
-      return `<button class="movie-card" data-k="${k}"><div class="card-poster" style="${posterStyle}"></div><div class="card-gradient"></div>` +
-        `<div class="card-info"><span class="card-badge">${folder ? 'Folder' : it.ext}</span>` +
-        `<div class="card-title">${esc(it.cleanTitle)}</div></div></button>`;
+    let sortMode = store.get('OPENFLIX_SORT', 'az');
+    const navNow = () => ($('nav').querySelector('.active') || {}).dataset.nav;
+    function sortSelectHtml() {
+      return '<label>Sort <select class="source-select" id="sort-select">' +
+        [['az', 'A to Z'], ['new', 'Newest first'], ['old', 'Oldest first']].map(o => '<option value="' + o[0] + '"' + (o[0] === sortMode ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+        '</select></label>';
+    }
+    function sortItems(list) {
+      const az = (a, b) => a.cleanTitle.localeCompare(b.cleanTitle, undefined, { numeric: true });
+      const yr = it => +yearOf(it) || 0;
+      return list.slice().sort(sortMode === 'new' ? (a, b) => yr(b) - yr(a) || az(a, b)
+                             : sortMode === 'old' ? (a, b) => (yr(a) || 9999) - (yr(b) || 9999) || az(a, b) : az);
+    }
+    $('catalog-container').addEventListener('change', e => {
+      if (e.target.id !== 'sort-select') return;
+      sortMode = e.target.value; store.set('OPENFLIX_SORT', sortMode);
+      rerender();
+    });
+
+    let viewMode = store.get('OPENFLIX_VIEW', 'grid');   // 'grid' or 'list', remembered on this device
+    function viewToggleHtml() {
+      return '<span class="view-toggle" role="group" aria-label="View">' +
+        [['grid', 'fa-grip', 'Grid view'], ['list', 'fa-list', 'List view']].map(v =>
+          '<button data-view="' + v[0] + '" class="' + (viewMode === v[0] ? 'active' : '') + '" aria-label="' + v[2] + '" aria-pressed="' + (viewMode === v[0]) + '" title="' + v[2] + '">' +
+          '<i class="fa-solid ' + v[1] + '"></i></button>').join('') + '</span>';
+    }
+    function toolsHtml() { return '<span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' + viewToggleHtml() + sortSelectHtml() + '</span>'; }
+
+    function listRowHtml(it, sub) {
+      const k = reg.push(it) - 1, folder = it.type === 'folder', inf = infoOf(it);
+      const bg = inf && inf.poster ? 'url(' + inf.poster + ') center/cover' : gradient(it.cleanTitle);
+      const w = !folder && watch[it.url], pct = w && w.d ? Math.min(100, Math.round(w.t / w.d * 100)) : 0;
+      const details = [yearOf(it), folder ? '' : it.resolution, sub, it.subs && it.subs.length ? 'CC' : '', pct ? 'Resume ' + fmt(w.t) : '']
+        .filter(Boolean).join(' · ');
+      return '<button class="list-row" data-k="' + k + '" data-info="' + esc(infoKey(it)) + '" aria-label="' + esc(it.cleanTitle) + '">' +
+        '<div class="list-thumb" style="background:' + esc(bg) + '"></div>' +
+        '<div class="list-main"><div class="list-title">' + esc(it.cleanTitle) + '</div><div class="list-sub">' + esc(details || (folder ? 'Folder' : it.rawName)) + '</div></div>' +
+        '<span class="list-badge">' + esc(folder ? (it.ext === 'archive' ? 'Film' : 'Folder') : it.ext) + '</span>' +
+        '<i class="fa-solid ' + (folder ? 'fa-chevron-right' : 'fa-play') + '"></i>' +
+        (pct ? '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' : '') + '</button>';
+    }
+
+    function cardsHtml(items, subOf) {
+      return viewMode === 'list'
+        ? '<div class="list-view">' + items.map(it => listRowHtml(it, subOf ? subOf(it) : '')).join('') + '</div>'
+        : '<div class="card-grid">' + items.map(it => cardHtml(it, false, subOf ? subOf(it) : '')).join('') + '</div>';
+    }
+
+    function gridHtml(title, items) {
+      return '<div class="grid-section"><div class="row-title">' + esc(title) + '</div>' + cardsHtml(items) + '</div>';
+    }
+
+    function rerender() {
+      const q = $('search-input').value.trim().toLowerCase();
+      if (navNow() === 'allvideos') renderLibrary();
+      else if (q && index && index.meta) renderSearch(q);
+      else if (navNow() === 'mylist') renderCatalog(myList, false);
+      else renderCatalog(navNow() === 'folder' ? allItems.filter(i => i.type === 'folder') : allItems, navNow() === 'all');
+    }
+
+    function rowHtml(title, items, progress, extra) {
+      const id = 'row' + Math.random().toString(36).slice(2, 9);
+      return '<div class="row-section"><div class="row-title">' + esc(title) + ' <i class="fa-solid fa-chevron-right" style="font-size:12px;"></i>' + (extra || '') + '</div>' +
+        '<div class="row-carousel"><button class="arrow-btn arrow-left" data-row="' + id + '" data-dir="-1" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>' +
+        '<div class="row-cards" id="' + id + '">' + items.map(it => cardHtml(it, progress)).join('') + '</div>' +
+        '<button class="arrow-btn arrow-right" data-row="' + id + '" data-dir="1" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button></div></div>';
+    }
+
+    function cardHtml(it, progress, sub) {
+      const k = reg.push(it) - 1, folder = it.type === 'folder', inf = infoOf(it);
+      const bg = inf && inf.poster ? 'url(' + inf.poster + ') center/cover' : gradient(it.cleanTitle);
+      const w = progress && watch[it.url];
+      const pct = w && w.d ? Math.min(100, Math.round(w.t / w.d * 100)) : 0;
+      return '<button class="movie-card" data-k="' + k + '" data-info="' + esc(infoKey(it)) + '" aria-label="' + esc(it.cleanTitle) + '">' +
+        '<div class="card-poster" style="background:' + esc(bg) + '"></div><div class="card-gradient"></div>' +
+        '<div class="card-info"><span class="card-badge">' + esc(folder ? (it.ext === 'archive' ? 'Film' : 'Folder') : (it.resolution || it.ext)) + '</span>' +
+        '<div class="card-title">' + esc(it.cleanTitle) + '</div>' +
+        '<div class="card-meta"><span' + (sub ? ' title="' + esc(sub) + '"' : '') + '>' + esc(sub || yearOf(it)) + '</span><i class="fa-solid ' + (folder ? 'fa-folder-open' : 'fa-circle-play') + '"></i></div></div>' +
+        (pct ? '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' : '') + '</button>';
+    }
+
+    function gradient(str) {
+      let h = 0; for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+      return 'linear-gradient(160deg, hsl(' + (Math.abs(h) % 360) + ',65%,18%) 0%, hsl(' + ((Math.abs(h) + 40) % 360) + ',60%,8%) 100%)';
     }
 
     $('catalog-container').addEventListener('click', e => {
-      const card = e.target.closest('.movie-card'); if (!card) return;
+      const act = e.target.closest('[data-action]');
+      if (act) return libraryAction(act.dataset.action, act);
+      const a = e.target.closest('.arrow-btn');
+      if (a) return $(a.dataset.row).scrollBy({ left: 600 * a.dataset.dir, behavior: 'smooth' });
+      const vb = e.target.closest('[data-view]');
+      if (vb) { viewMode = vb.dataset.view; store.set('OPENFLIX_VIEW', viewMode); return rerender(); }
+      const card = e.target.closest('.movie-card, .list-row'); if (!card) return;
       const it = reg[+card.dataset.k]; if (!it) return;
-      if (it.type === 'folder') { load(it.url, true); } else { openDetail(it); }
+      if (it.type === 'folder') {
+        const si = it.source ? sources.findIndex(x => x.name === it.source) : -1;
+        if (si >= 0 && sources[si].url !== rootUrl) { $('source-select').value = si; backStack = []; rootUrl = sources[si].url; }
+        else if (!rootUrl) rootUrl = it.url;
+        $('search-input').value = '';
+        load(it.url, true, false, true); window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      else openDetail(it);
     });
 
-    function fillHero(it) {
-      const cov = covers[it.title + '|' + it.year] || {};
-      $('hero-title').textContent = it.cleanTitle;
-      $('hero-desc').textContent = cov.overview || it.url;
-      if (cov.poster) $('hero-banner').style.backgroundImage = `url('${cov.backdrop || cov.poster}')`;
-      if (cov.rating) { $('hero-rating').textContent = '★ ' + cov.rating; $('hero-meta-bar').style.display = 'flex'; }
-      if (it.year) { $('hero-year').textContent = it.year; $('hero-meta-bar').style.display = 'flex'; }
-      $('hero-play').disabled = $('hero-info').disabled = false;
+    /* ---------- Index: a Google Sheet listing every file and folder, for instant search ---------- */
+    const PAGE = 300;
+    let index = null;                 // { items, meta, daily, sheetUrl }
+    let indexBusy = false, indexMsg = '', libShown = PAGE, searchShown = PAGE, shownVideos = [];
+
+    function parseSubs(cell) { try { return cell ? JSON.parse(cell) : []; } catch (e) { return []; } }
+    function rowToItem(r) {   // sheet columns: Source, Type, Title, Year, Quality, Format, Folder, File name, URL
+      const folder = r[1] === 'Folder';
+      return { type: folder ? 'folder' : 'video', source: r[0], title: r[2], year: r[3], resolution: r[4], ext: folder ? 'dir' : r[5],
+               folder: r[6], rawName: r[7], url: r[8], cleanTitle: folder ? r[7] : (r[3] ? r[2] + ' (' + r[3] + ')' : r[2]), subs: parseSubs(r[9]) };
     }
+
+    function loadIndex(then) {
+      google.script.run
+        .withSuccessHandler(res => {
+          index = { items: (res.rows || []).map(rowToItem), meta: res.meta || null, daily: !!res.daily, sheetUrl: res.sheetUrl || '' };
+          renderIndexSettings(); if (then) then();
+        })
+        .withFailureHandler(e => { indexMsg = e.message; index = index || { items: [], meta: null, daily: false, sheetUrl: '' }; renderIndexSettings(); if (then) then(); })
+        .getIndex();
+    }
+
+    function rebuildIndex(full) {
+      if (indexBusy) return;
+      indexBusy = true; indexMsg = '';
+      renderLibrary(); renderIndexSettings();
+      google.script.run
+        .withSuccessHandler(res => { indexBusy = false; if (res && res.error) indexMsg = res.error; loadIndex(() => { renderLibrary(); refreshSearch(); }); })
+        .withFailureHandler(e => { indexBusy = false; indexMsg = e.message; renderLibrary(); renderIndexSettings(); })
+        .buildIndex(full ? 'full' : 'update');
+    }
+
+    const when = t => new Date(t).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    function indexStatus() {
+      if (indexBusy) return '<i class="fa-solid fa-spinner fa-spin"></i> Building the index... this can take a minute or two';
+      if (!index) return '<i class="fa-solid fa-spinner fa-spin"></i> Loading the index...';
+      if (!index.meta) return 'No index yet';
+      const m = index.meta;
+      return m.videos + ' videos in ' + m.folders + ' folders · updated ' + when(m.at) + (m.skipped ? ' (' + m.skipped + ' unchanged folders skipped)' : '') +
+        (m.partial ? ' · <b>not finished</b> (5-minute limit): press Update index again to continue' : '') + (m.failed ? ' · ' + m.failed + (m.failed === 1 ? ' folder' : ' folders') + ' could not be read' : '');
+    }
+    function indexButtons() {
+      return '<button class="btn btn-gray small" data-action="rebuild"' + (indexBusy ? ' disabled' : '') + ' title="Reads new and changed folders, skips unchanged ones"><i class="fa-solid fa-rotate-right"></i> Update index</button>' +
+        (index && index.sheetUrl ? '<a class="btn btn-gray small" href="' + esc(index.sheetUrl) + '" target="_blank" rel="noopener"><i class="fa-solid fa-table"></i> Open sheet</a>' : '');
+    }
+
+    // Every word must appear somewhere in the title, folder path, file name or source.
+    function matches(it, q) {
+      if (!q) return true;
+      const hay = (it.cleanTitle + ' ' + (it.folder || '') + ' ' + (it.rawName || '') + ' ' + (it.source || '')).toLowerCase();
+      return q.split(/\s+/).every(w => hay.includes(w));
+    }
+
+    function gridBlock(title, list, shown, moreAction) {
+      return '<div class="grid-section"><div class="row-title">' + esc(title) + '</div>' +
+        cardsHtml(list.slice(0, shown), it => it.folder ? (it.folder === '/' ? 'Home' : it.folder) : '') +
+        (list.length > shown ? '<div class="more-wrap"><button class="btn btn-gray" data-action="' + moreAction + '">Show more (' + (list.length - shown) + ' left)</button></div>' : '') + '</div>';
+    }
+
+    function paint(html) { const y = window.scrollY; $('catalog-container').innerHTML = html; window.scrollTo(0, y); }
+
+    function showLibrary() {
+      setNav('allvideos'); libShown = PAGE;
+      if (!index) loadIndex(renderLibrary);
+      renderLibrary();
+    }
+
+    function renderLibrary() {
+      if (navNow() !== 'allvideos') return;
+      const q = $('search-input').value.trim().toLowerCase();
+      const src = (sources[+$('source-select').value] || {}).name;
+      const list = index ? sortItems(index.items.filter(i => i.type === 'video' && i.source === src && matches(i, q))) : [];
+      shownVideos = list; reg = [];
+      let html = '<div class="toolbar"><span>' + (indexMsg ? '<span style="color:#ff6b6b">' + esc(indexMsg) + '</span> · ' : '') + indexStatus() +
+        (q && index && index.meta ? ' · ' + list.length + ' match' : '') + '</span>' +
+        '<span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' + indexButtons() + viewToggleHtml() + sortSelectHtml() + '</span></div>';
+      if (list.length) { html += gridBlock('All Videos', list, libShown, 'more-lib'); fetchInfo(list); }
+      else if (index && !indexBusy) html += '<div class="state">' + (!index.meta
+        ? 'Build the index once to list every video from every folder here, and to search all folders at once.<br><br><button class="btn btn-red" data-action="rebuild"><i class="fa-solid fa-database"></i> Build index</button>'
+        : q ? 'No videos match "' + esc(q) + '".' : 'No videos found in this source.') + '</div>';
+      paint(html);
+    }
+
+    function renderSearch(q) {
+      const hits = index.items.filter(i => matches(i, q));
+      const vids = sortItems(hits.filter(i => i.type === 'video')), folders = sortItems(hits.filter(i => i.type === 'folder'));
+      shownVideos = vids; reg = [];
+      let html = '<div class="toolbar"><span>' + vids.length + ' video' + (vids.length === 1 ? '' : 's') + ' and ' + folders.length + ' folder' + (folders.length === 1 ? '' : 's') +
+        ' match "' + esc(q) + '" across all folders</span>' + toolsHtml() + '</div>';
+      if (vids.length) html += gridBlock('Videos', vids, searchShown, 'more-search');
+      if (folders.length) html += gridBlock('Folders', folders, searchShown, 'more-search');
+      if (!hits.length) html += '<div class="state">Nothing matches. Press Enter to search Internet Archive instead.</div>';
+      paint(html);
+    }
+
+    function refreshSearch() { if ($('search-input').value.trim() && navNow() !== 'allvideos') $('search-input').dispatchEvent(new Event('input')); }
+
+    function clearHistory() {
+      watch = {}; store.set('OPENFLIX_WATCH_HISTORY', watch);
+      if (navNow() === 'all' && !$('search-input').value.trim()) renderCatalog(allItems, true);
+    }
+    // Asks for a second click instead of a pop-up, so history isn't wiped by one stray tap.
+    function confirmClick(btn, label, run) {
+      const span = btn.querySelector('span');
+      if (btn.dataset.armed) { run(); return; }
+      btn.dataset.armed = '1'; const old = span.textContent; span.textContent = label;
+      setTimeout(() => { delete btn.dataset.armed; span.textContent = old; }, 3000);
+    }
+
+    function libraryAction(a, btn) {
+      if (a === 'clear-history') return confirmClick(btn, 'Click again to clear', clearHistory);
+      if (a === 'rebuild') rebuildIndex(false);
+      else if (a === 'rescan-full') rebuildIndex(true);
+      else if (a === 'more-lib') { libShown += PAGE; renderLibrary(); }
+      else if (a === 'more-search') { searchShown += PAGE; renderSearch($('search-input').value.trim().toLowerCase()); }
+    }
+
+    function renderIndexSettings() {
+      const el = $('index-settings'); if (!el) return;
+      el.innerHTML = '<div style="margin-bottom:10px;">' + indexStatus() + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">' + indexButtons() +
+        '<button class="btn btn-gray small" data-action="rescan-full"' + (indexBusy ? ' disabled' : '') + ' title="Reads every folder again"><i class="fa-solid fa-arrows-rotate"></i> Full rescan</button></div>' +
+        '<label style="display:flex;gap:8px;align-items:center;margin:12px 0 0;color:#ddd;font-size:13px;cursor:pointer;">' +
+        '<input type="checkbox" id="daily-index" style="width:auto;margin:0;"' + (index && index.daily ? ' checked' : '') + '> Rebuild automatically every night (about 4 am)</label>';
+    }
+
+    /* ---------- TMDB info (only with a key) ---------- */
+    // Covers work like Melojinn's: shared Covers tab first, then TMDB (if you added a key) or iTunes (free, no key).
+    let coversLoaded = false, waitingItems = null, itQueue = [], itQueued = new Set(), itBusy = false, toSave = [];
+
+    function loadCovers() {
+      google.script.run
+        .withSuccessHandler(res => { Object.assign(info, res || {}); coversLoaded = true; refreshPosters(); if (waitingItems) fetchInfo(waitingItems); })
+        .withFailureHandler(() => { coversLoaded = true; if (waitingItems) fetchInfo(waitingItems); })
+        .getCovers();
+    }
+
+    function refreshPosters() {
+      document.querySelectorAll('.movie-card[data-info], .list-row[data-info]').forEach(card => {
+        const inf = info[card.dataset.info];
+        if (inf && inf.poster) card.querySelector('.card-poster, .list-thumb').style.background = 'url("' + inf.poster.replace(/["\\]/g, '\\$&') + '") center/cover';
+      });
+      if (heroItem) fillHero(heroItem);
+    }
+
+    function remember(it, inf, by) {
+      info[infoKey(it)] = inf;
+      toSave.push(Object.assign({ key: infoKey(it), title: it.title, year: it.year, by: by }, inf || {}));
+      if (toSave.length >= 10) flushCovers();
+    }
+    function flushCovers() { if (toSave.length) google.script.run.withFailureHandler(() => {}).saveCovers(toSave.splice(0)); }
+    window.addEventListener('beforeunload', flushCovers);
+
+    function fetchInfo(items) {
+      if (!coversLoaded) { waitingItems = items; return; }   // don't look up what the family already found
+      waitingItems = null;
+      const wanted = items.filter(i => i.title && (i.type === 'video' || i.year));   // folders only when named like "Title (2010)"
+      const missing = wanted.filter(i => !(infoKey(i) in info));
+      if (!missing.length) return;
+      if (!tmdbKey) return queueItunes(missing);
+      const need = missing.slice(0, 40);
+      google.script.run.withSuccessHandler(res => {
+        need.forEach(i => { const k = infoKey(i); if (k in (res || {})) remember(i, res[k], 'TMDB'); });
+        flushCovers(); refreshPosters();
+        if (res && Object.keys(res).length && wanted.some(i => !(infoKey(i) in info))) fetchInfo(items);   // next 40
+      }).getMovieInfo(need.map(i => ({ title: i.title, year: i.year })));
+    }
+
+    function queueItunes(items) {
+      items.forEach(i => { const k = infoKey(i); if (!itQueued.has(k)) { itQueued.add(k); itQueue.push(i); } });
+      if (!itBusy) nextItunes();
+    }
+
+    // One lookup every ~3 s (iTunes allows about 20 a minute), backing off after an error, the same pacing as Melojinn.
+    function nextItunes() {
+      const it = itQueue.shift();
+      if (!it) { itBusy = false; flushCovers(); return; }
+      if (infoKey(it) in info) return nextItunes();
+      itBusy = true;
+      lookupItunes(it).then(inf => { remember(it, inf, 'iTunes'); refreshPosters(); setTimeout(nextItunes, 3200); },
+                            () => { itQueued.delete(infoKey(it)); setTimeout(nextItunes, 12000); });   // network/rate limit: skip for now, retried later
+    }
+
+    const norm = t => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    function lookupItunes(it) {
+      const q = it.title.replace(/[\(\[\{].*?[\)\]\}]/g, '').trim();
+      return fetch('https://itunes.apple.com/search?media=movie&entity=movie&limit=10&country=ae&term=' + encodeURIComponent(q))
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+        .then(d => {
+          // Only accept the same title (and a year within 1), so home videos like "Birthday" don't get a random movie poster.
+          const yr = r => +(r.releaseDate || '').slice(0, 4);
+          const hit = (d.results || []).find(r => norm(r.trackName) === norm(q) && (!it.year || Math.abs(yr(r) - +it.year) <= 1));
+          if (!hit || !hit.artworkUrl100) return null;
+          const poster = hit.artworkUrl100.replace(/\/\d+x\d+bb\./, '/600x900bb.');
+          return { poster: poster, backdrop: '', overview: hit.longDescription || hit.shortDescription || '', rating: '', year: String(yr(hit) || '') };
+        });
+    }
+
+    /* ---------- hero ---------- */
+    function setupHero(items) {
+      const vids = items.filter(i => i.type === 'video');
+      heroItem = vids.length ? vids[Math.floor(Math.random() * vids.length)] : null;
+      $('hero-play').disabled = $('hero-info').disabled = !heroItem;
+      if (heroItem) return fillHero(heroItem);
+      $('hero-title').textContent = 'Your Library';
+      $('hero-desc').textContent = 'Open a folder to see its movies.';
+      ['hero-rating', 'hero-year', 'hero-quality'].forEach(id => $(id).textContent = '');
+      $('hero-banner').style.backgroundImage = '';
+    }
+
+    function fillHero(it) {
+      const inf = infoOf(it) || {};
+      $('hero-title').textContent = it.title || it.cleanTitle;
+      $('hero-rating').textContent = inf.rating ? '★ ' + inf.rating : '';
+      $('hero-year').textContent = yearOf(it);
+      $('hero-quality').textContent = it.resolution || it.ext;
+      $('hero-desc').textContent = inf.overview || it.rawName;
+      const art = inf.backdrop || inf.poster;
+      $('hero-banner').style.backgroundImage = art ? 'url("' + art + '")' : '';
+    }
+
     $('hero-play').addEventListener('click', () => heroItem && playVideo(heroItem));
     $('hero-info').addEventListener('click', () => heroItem && openDetail(heroItem));
 
+    /* ---------- detail modal ---------- */
     function openDetail(it) {
       modalItem = it;
-      const cov = covers[it.title + '|' + it.year] || {};
-      $('modal-title').textContent = it.cleanTitle;
-      $('modal-desc').textContent = cov.overview || 'No description available.';
-      $('modal-file').textContent = it.url;
+      const inf = infoOf(it) || {};
+      $('modal-title').textContent = it.title || it.cleanTitle;
+      $('modal-rating').textContent = inf.rating ? '★ ' + inf.rating : '';
+      $('modal-year').textContent = yearOf(it);
+      $('modal-quality').textContent = it.resolution || it.ext;
+      $('modal-desc').textContent = inf.overview || '';
+      $('modal-file').textContent = it.rawName;
       $('modal-new-tab').href = it.url;
-      if (cov.poster) $('modal-banner').style.backgroundImage = `url('${cov.backdrop || cov.poster}')`;
-      $('modal-list').querySelector('span').textContent = myList.some(m => m.url === it.url) ? 'Remove from My List' : 'My List';
-      $('detail-modal').style.display = 'flex';
+      const w = watch[it.url];
+      $('modal-play').querySelector('span').textContent = w ? 'Resume ' + fmt(w.t) : 'Play Now';
+      $('modal-list').querySelector('span').textContent = inList(it) ? 'Remove from My List' : 'My List';
+      $('modal-forget').style.display = watch[it.url] ? '' : 'none';
+      $('modal-banner').style.background = (inf.backdrop || inf.poster) ? 'url("' + (inf.backdrop || inf.poster) + '") center/cover' : gradient(it.cleanTitle);
+      openModal('detail-modal');
+      warm(it, true);   // start buffering while you read the details
     }
 
-    $('modal-play').addEventListener('click', () => { if (modalItem) playVideo(modalItem); $('detail-modal').style.display = 'none'; });
+    const inList = it => myList.some(m => m.url === it.url);
+    $('modal-play').addEventListener('click', () => { if (modalItem) playVideo(modalItem); closeModal('detail-modal'); });
+    $('modal-forget').addEventListener('click', () => {
+      if (!modalItem) return;
+      delete watch[modalItem.url]; store.set('OPENFLIX_WATCH_HISTORY', watch);
+      $('modal-forget').style.display = 'none';
+      $('modal-play').querySelector('span').textContent = 'Play Now';
+      if (navNow() === 'all' && !$('search-input').value.trim()) renderCatalog(allItems, true);
+    });
     $('modal-list').addEventListener('click', () => {
       if (!modalItem) return;
-      if (myList.some(m => m.url === modalItem.url)) myList = myList.filter(m => m.url !== modalItem.url);
-      else myList.push(modalItem);
-      localStorage.setItem('OPENFLIX_MY_LIST', JSON.stringify(myList));
-      $('modal-list').querySelector('span').textContent = myList.some(m => m.url === modalItem.url) ? 'Remove from My List' : 'My List';
+      myList = inList(modalItem) ? myList.filter(m => m.url !== modalItem.url) : myList.concat([modalItem]);
+      store.set('OPENFLIX_MY_LIST', myList);
+      $('modal-list').querySelector('span').textContent = inList(modalItem) ? 'Remove from My List' : 'My List';
     });
 
+    /* ---------- player ---------- */
     const video = $('main-video');
-    const player = new Plyr(video);
+    // Plyr gives nicer controls (speed, 10 s skip, picture-in-picture). If its CDN doesn't load, the browser's own player is used.
+    // Which in-app player this device uses: 'plyr' (OpenFlix controls) or 'builtin' (the browser's own: Cast in Chrome, audio menu in Safari).
+    const PLAYER_PREF = store.get('OPENFLIX_PLAYER', 'plyr');
+    const plyr = PLAYER_PREF === 'plyr' && window.Plyr ? new Plyr(video, {
+      controls: ['play-large', 'rewind', 'play', 'fast-forward', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+      settings: ['captions', 'speed'],
+      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3] },
+      seekTime: 10,
+      captions: { active: false, update: true },   // pick up subtitle tracks added while playing
+      keyboard: { focused: true, global: false },   // global keys would also hit the hidden pre-buffered video
+      tooltips: { controls: true, seek: true },
+      storage: { enabled: true, key: 'openflix_plyr' }   // remembers volume and speed
+    }) : null;
+    const fmt = s => { s = Math.floor(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60); return (h ? h + 'h ' : '') + m + 'm'; };
+    function playerMsg(t) { $('player-msg').style.display = t ? 'block' : 'none'; $('player-msg').textContent = t || ''; }
+
+    // Switching player needs a fresh page (Plyr can't be cleanly removed), so save the spot and reopen the same video after reload.
+    $('player-engine').value = PLAYER_PREF;
+    $('player-engine').addEventListener('change', e => {
+      store.set('OPENFLIX_PLAYER', e.target.value);
+      saveProgress(true);
+      try { if (playingItem) sessionStorage.setItem('OPENFLIX_REOPEN', JSON.stringify(playingItem)); } catch (x) {}
+      location.reload();
+    });
+
+    /* ---------- "Open with…": free player apps that play every format ---------- */
+    const UA = navigator.userAgent;
+    const PLATFORM = /iPad|iPhone|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1) ? 'ios'
+      : /Android/i.test(UA) ? 'android' : /Mac/.test(UA) ? 'mac' : /Win/.test(UA) ? 'windows' : 'other';
+
+    function playerApps(url) {
+      const e = encodeURIComponent(url);
+      // Android "intent:" links open the app directly, or the Play Store page if it isn't installed.
+      const intent = pkg => 'intent://' + url.replace(/^https?:\/\//i, '') + '#Intent;scheme=' + url.split(':')[0].toLowerCase() +
+        ';type=video/*;' + (pkg ? 'package=' + pkg + ';' : '') + 'end';
+      return {
+        ios:     [['VLC', 'vlc-x-callback://x-callback-url/stream?url=' + e], ['Infuse', 'infuse://x-callback-url/play?url=' + e], ['Outplayer', 'outplayer://' + url]],
+        android: [['VLC', intent('org.videolan.vlc')], ['MX Player', intent('com.mxtech.videoplayer.ad')], ['Choose an app…', intent('')]],
+        mac:     [['IINA', 'iina://weblink?url=' + e], ['VLC', 'vlc://' + url]],
+        windows: [['PotPlayer', 'potplayer://' + url], ['VLC', 'vlc://' + url]],
+        other:   [['VLC', 'vlc://' + url]]
+      }[PLATFORM];
+    }
+
+    function m3uUrl(it) {   // a tiny playlist file: VLC, PotPlayer, IINA, MPV... all open it with a double-click
+      return URL.createObjectURL(new Blob(['#EXTM3U\n#EXTINF:-1,' + it.cleanTitle + '\n' + it.url + '\n'], { type: 'audio/x-mpegurl' }));
+    }
+
+    let owItem = null, owBlob = '';
+    function openWithMenu(btn, it) {
+      const menu = $('openwith-menu');
+      if (!menu.hidden && owItem === it) return closeWithMenu();
+      owItem = it;
+      if (owBlob) URL.revokeObjectURL(owBlob);
+      owBlob = m3uUrl(it);
+      const desktop = PLATFORM === 'mac' || PLATFORM === 'windows' || PLATFORM === 'other';
+      menu.innerHTML = '<div class="ow-head">Free player apps</div>' +
+        playerApps(it.url).map(a => '<a role="menuitem" href="' + esc(a[1]) + '" target="_top"><i class="fa-solid fa-circle-play"></i> ' + esc(a[0]) + '</a>').join('') +
+        (desktop ? '<div class="ow-note">Nothing happens? Your player may not accept web links: use the playlist file below instead.</div>' : '') +
+        // Online players run in your browser, so they play the same formats as OpenFlix, and the site sees the link you send.
+        '<hr><div class="ow-head">Free online players</div>' +
+        '<a role="menuitem" href="https://www.livereacting.com/tools/mp4-player?url=' + encodeURIComponent(it.url) + '" target="_blank" rel="noopener noreferrer">' +
+          '<i class="fa-solid fa-globe"></i> LiveReacting MP4 Player</a>' +
+        '<button role="menuitem" data-ow="copy-open" data-href="https://livepush.io/mp4-player/index.html"><i class="fa-solid fa-globe"></i> <span>Livepush Player (link copied, paste it there)</span></button>' +
+        (/^http:/i.test(it.url) ? '<div class="ow-note">These sites are https, so they can\'t play this http:// link.</div>' : '') +
+        '<hr><a role="menuitem" href="' + owBlob + '" download="' + esc(it.cleanTitle.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'video') + '.m3u">' +
+          '<i class="fa-solid fa-file-arrow-down"></i> Download playlist file (.m3u)</a>' +
+        '<button role="menuitem" data-ow="copy"><i class="fa-solid fa-copy"></i> <span>Copy video link</span></button>' +
+        '<a role="menuitem" href="' + esc(it.url) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open in new tab</a>';
+      menu.hidden = false;
+      // place under the button, kept on screen
+      const r = btn.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
+      menu.style.left = Math.max(10, Math.min(r.left, innerWidth - mw - 10)) + 'px';
+      menu.style.top = (r.bottom + 6 + mh < innerHeight ? r.bottom + 6 : Math.max(10, r.top - mh - 6)) + 'px';
+      menu.querySelector('a, button').focus();
+    }
+    function closeWithMenu() { $('openwith-menu').hidden = true; owItem = null; }
+
+    $('openwith-menu').addEventListener('click', e => {
+      const co = e.target.closest('[data-ow="copy-open"]');
+      if (co) {   // this player has no way to receive a link, so copy it, then open the player to paste into
+        const done = () => { window.open(co.dataset.href, '_blank', 'noopener'); closeWithMenu(); };
+        navigator.clipboard ? navigator.clipboard.writeText(owItem.url).then(done, () => { prompt('Copy this link, then paste it in the player:', owItem.url); done(); })
+                            : (prompt('Copy this link, then paste it in the player:', owItem.url), done());
+        return;
+      }
+      const b = e.target.closest('[data-ow="copy"]');
+      if (b) {
+        const span = b.querySelector('span'), url = owItem.url;
+        const ok = () => { span.textContent = 'Copied'; setTimeout(closeWithMenu, 700); };
+        navigator.clipboard ? navigator.clipboard.writeText(url).then(ok, () => prompt('Copy this link:', url)) : prompt('Copy this link:', url);
+        return;
+      }
+      if (e.target.closest('a')) setTimeout(closeWithMenu, 300);
+    });
+    document.addEventListener('click', e => {
+      if (!$('openwith-menu').hidden && !e.target.closest('#openwith-menu, #player-openwith, #modal-openwith')) closeWithMenu();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('openwith-menu').hidden) { e.stopPropagation(); closeWithMenu(); } }, true);
+    window.addEventListener('resize', closeWithMenu);
+    $('player-openwith').addEventListener('click', e => { if (playingItem) { video.pause(); openWithMenu(e.currentTarget, playingItem); } });
+    $('modal-openwith').addEventListener('click', e => { if (modalItem) openWithMenu(e.currentTarget, modalItem); });
+
+    /* ---------- subtitles and audio languages ---------- */
+    let subBlobs = [], subPrev = 'off';
+    const LANG_NAMES = { en: 'English', eng: 'English', ar: 'Arabic', ara: 'Arabic', hi: 'Hindi', hin: 'Hindi', te: 'Telugu', tel: 'Telugu',
+      ta: 'Tamil', tam: 'Tamil', ml: 'Malayalam', mal: 'Malayalam', ur: 'Urdu', urd: 'Urdu', fr: 'French', fre: 'French', es: 'Spanish', spa: 'Spanish' };
+
+    function b64ToBytes(b64) { const s = atob(b64), a = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+
+    // UTF-8 first; older SRTs are often Windows code pages. shortcut: guesses Arabic (1256) vs Western (1252) from the byte mix; add more pages if needed.
+    function decodeSub(bytes) {
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch (e) {}
+      let hi = 0, letters = 0;
+      for (const b of bytes) { if (b >= 0xC0) hi++; const l = b | 32; if (l >= 97 && l <= 122) letters++; }
+      return new TextDecoder(hi > letters * 0.3 ? 'windows-1256' : 'windows-1252').decode(bytes);
+    }
+
+    // SRT -> WebVTT: header, "," -> "." in times, and drop {\an8}-style tags.
+    function toVtt(text) {
+      text = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+      if (/^WEBVTT/.test(text)) return text;
+      return 'WEBVTT\n\n' + text.replace(/(\d+:\d{2}:\d{2}),(\d{3})/g, '$1.$2').replace(/\{\\[^}]*\}/g, '');
+    }
+
+    // Server first (avoids the NAS's CORS rules); the browser fetches it directly if Google can't reach the server.
+    function fetchSub(url) {
+      return new Promise((ok, fail) => google.script.run
+        .withSuccessHandler(b64 => ok(decodeSub(b64ToBytes(b64))))
+        .withFailureHandler(() => fetch(url).then(r => r.ok ? r.arrayBuffer() : Promise.reject()).then(buf => ok(decodeSub(new Uint8Array(buf))), fail))
+        .getSubtitle(url));
+    }
+
+    function clearTracks() {
+      video.querySelectorAll('track').forEach(t => t.remove());
+      subBlobs.forEach(u => URL.revokeObjectURL(u)); subBlobs = [];
+    }
+
+    function addTrack(label, text, lang) {
+      const url = URL.createObjectURL(new Blob([toVtt(text)], { type: 'text/vtt' }));
+      subBlobs.push(url);
+      const t = document.createElement('track');
+      t.kind = 'subtitles'; t.label = label; t.src = url; if (lang) t.srclang = lang;
+      video.appendChild(t);
+      return video.textTracks.length - 1;
+    }
+
+    function showSub(i) {   // i = text track index, -1 = off
+      Array.from(video.textTracks).forEach((t, n) => { t.mode = n === i ? 'showing' : 'disabled'; });
+      if (plyr) { plyr.currentTrack = i; plyr.toggleCaptions(i >= 0); }
+      store.set('OPENFLIX_SUB_LANG', i >= 0 ? video.textTracks[i].label : '');
+    }
+
+    // Subtitle files found next to the video: [{ label, lang, load() -> Promise<text> }].
+    function setupSubs(it, list) {
+      clearTracks();
+      const sel = $('sub-select');
+      const subs = list || (it.subs || []).map(x => ({ label: x.label, lang: x.lang, load: () => fetchSub(x.url) }));
+      sel.innerHTML = '<option value="off">Subtitles: Off</option>' +
+        subs.map((x, i) => '<option value="s' + i + '">' + esc(x.label) + ' (loading...)</option>').join('') +
+        '<option value="file">Load subtitle file...</option>';
+      sel.value = subPrev = 'off';
+      const want = store.get('OPENFLIX_SUB_LANG', '');   // keep the language you last picked
+      subs.forEach((x, i) => x.load().then(text => {
+        if (playingItem !== it) return;
+        const ti = addTrack(x.label, text, x.lang), opt = sel.querySelector('option[value="s' + i + '"]');
+        opt.textContent = x.label; opt.dataset.track = ti;
+        if (want && x.label === want && sel.value === 'off') { sel.value = subPrev = 's' + i; showSub(ti); }
+      }, () => {
+        const opt = sel.querySelector('option[value="s' + i + '"]');
+        if (opt) { opt.textContent = x.label + ' (could not load)'; opt.disabled = true; }
+      }));
+    }
+
+    $('sub-select').addEventListener('change', e => {
+      const sel = e.target, v = sel.value;
+      if (v === 'file') { sel.value = subPrev; return $('sub-file').click(); }
+      subPrev = v;
+      showSub(v === 'off' ? -1 : +sel.selectedOptions[0].dataset.track);
+    });
+
+    $('sub-file').addEventListener('change', e => {
+      const f = e.target.files[0]; e.target.value = '';
+      if (!f) return;
+      f.arrayBuffer().then(buf => {
+        const ti = addTrack(f.name.replace(/\.[^.]+$/, ''), decodeSub(new Uint8Array(buf)));
+        const sel = $('sub-select'), o = document.createElement('option');
+        o.value = 'f' + ti; o.dataset.track = ti; o.textContent = f.name;
+        sel.insertBefore(o, sel.querySelector('option[value="file"]'));
+        sel.value = subPrev = o.value; showSub(ti);
+      });
+    });
+
+    // Audio languages: browsers that expose audioTracks (Safari) get a menu; Chrome plays the file's main track.
+    function setupAudio() {
+      const sel = $('audio-select'), at = video.audioTracks;
+      if (!at || at.length < 2) { sel.style.display = 'none'; return; }
+      sel.innerHTML = Array.from(at).map((t, i) => '<option value="' + i + '"' + (t.enabled ? ' selected' : '') + '>Audio: ' +
+        esc(t.label || LANG_NAMES[(t.language || '').toLowerCase()] || t.language || 'Track ' + (i + 1)) + '</option>').join('');
+      sel.style.display = '';
+    }
+    video.addEventListener('loadedmetadata', setupAudio);
+    $('audio-select').addEventListener('change', e => {
+      Array.from(video.audioTracks).forEach((t, i) => { t.enabled = i === +e.target.value; });
+    });
+
+    const BROWSER_OK = ['MP4', 'M4V', 'WEBM', 'OGV', 'MOV'];   // formats browsers play reliably
+
+    /* ---------- Pro controls: speed, picture, subtitle size & timing, A-B repeat, sleep timer, skip intro, gestures ---------- */
+    const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3], FITS = [['contain', 'Fit'], ['cover', 'Fill'], ['fill', 'Stretch']];
+    const SUB_SIZES = [['80%', 'S'], ['100%', 'M'], ['130%', 'L'], ['170%', 'XL']];
+    let prefs = Object.assign({ speed: 1, fit: 'contain', sub: '100%', intro: 85 }, store.get('OPENFLIX_PREFS', {}));
+    let abA = null, abB = null, sleepAt = 0, sleepEnd = false, introDoneFor = null, osdTimer = null;
+
+    function savePrefs() { store.set('OPENFLIX_PREFS', prefs); }
+    function osd(t) { const o = $('osd'); o.textContent = t; o.classList.add('show'); clearTimeout(osdTimer); osdTimer = setTimeout(() => o.classList.remove('show'), 1100); }
+    function applyPrefs() {
+      video.style.objectFit = prefs.fit;
+      document.documentElement.style.setProperty('--sub-size', prefs.sub);
+      if (plyr) { try { plyr.speed = prefs.speed; } catch (e) {} }
+      video.playbackRate = prefs.speed;
+    }
+    video.addEventListener('loadedmetadata', applyPrefs);
+    applyPrefs();
+
+    function setSpeed(v) { prefs.speed = v; savePrefs(); applyPrefs(); osd('Speed ' + v + '×'); }
+    function cycleFit() { const i = FITS.findIndex(f => f[0] === prefs.fit); prefs.fit = FITS[(i + 1) % FITS.length][0]; savePrefs(); applyPrefs(); osd('Picture: ' + FITS.find(f => f[0] === prefs.fit)[1]); }
+
+    // Subtitle timing: shifts every line of the subtitles that are showing.
+    function activeTrack() {
+      const tracks = Array.from(video.textTracks);
+      return tracks.find(t => t.mode === 'showing') || (plyr && plyr.currentTrack >= 0 ? tracks[plyr.currentTrack] : null);
+    }
+    function shiftSubs(d) {
+      const t = activeTrack();
+      if (!t || !t.cues) return osd('Turn on subtitles first');
+      Array.from(t.cues).forEach(c => { c.startTime = Math.max(0, c.startTime + d); c.endTime = Math.max(0, c.endTime + d); });
+      t._shift = Math.round(((t._shift || 0) + d) * 10) / 10;
+      osd('Subtitles ' + (t._shift > 0 ? '+' : '') + t._shift.toFixed(1) + ' s' + (t._shift > 0 ? ' (later)' : t._shift < 0 ? ' (earlier)' : ''));
+      if (!$('pro-panel').hidden) renderPro();
+    }
+
+    const tfmt = s => { s = Math.floor(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+    function renderPro() {
+      const chip = (on, attrs, label) => '<button class="chip' + (on ? ' on' : '') + '" ' + attrs + '>' + label + '</button>';
+      const t = activeTrack(), sh = t ? (t._shift || 0) : 0;
+      const left = sleepEnd ? 'at the end of this video' : sleepAt ? Math.max(0, Math.ceil((sleepAt - Date.now()) / 60000)) + ' min left' : '';
+      $('pro-panel').innerHTML =
+        '<div class="ow-head">Player settings</div>' +
+        '<div class="pro-row"><span>Speed</span>' + SPEEDS.map(v => chip(prefs.speed === v, 'data-speed="' + v + '"', v + '×')).join('') + '</div>' +
+        '<div class="pro-row"><span>Picture</span>' + FITS.map(f => chip(prefs.fit === f[0], 'data-fit="' + f[0] + '"', f[1])).join('') + '</div>' +
+        '<div class="pro-row"><span>Subtitle size</span>' + SUB_SIZES.map(z => chip(prefs.sub === z[0], 'data-sub="' + z[0] + '"', z[1])).join('') + '</div>' +
+        '<div class="pro-row"><span>Subtitle timing</span>' + chip(false, 'data-shift="-0.5"', '− 0.5 s') +
+          '<span class="pro-val">' + (sh > 0 ? '+' : '') + sh.toFixed(1) + ' s</span>' + chip(false, 'data-shift="0.5"', '+ 0.5 s') +
+          (sh ? chip(false, 'data-shift="' + (-sh) + '"', 'Reset') : '') + '</div>' +
+        '<div class="pro-row"><span>Repeat A–B</span>' + chip(abA != null, 'data-ab="a"', 'A ' + (abA != null ? tfmt(abA) : '')) +
+          chip(abB != null, 'data-ab="b"', 'B ' + (abB != null ? tfmt(abB) : '')) + (abA != null ? chip(false, 'data-ab="off"', 'Off') : '') + '</div>' +
+        '<div class="pro-row"><span>Sleep timer</span><select id="sleep-sel" aria-label="Sleep timer">' +
+          [['0', 'Off'], ['end', 'End of this video'], ['15', '15 min'], ['30', '30 min'], ['60', '1 hour'], ['90', '1.5 hours']]
+            .map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select>' +
+          (left ? '<span class="pro-val" style="min-width:auto">' + left + '</span>' : '') + '</div>' +
+        '<div class="pro-row"><span>Skip intro</span>' + [60, 85, 90, 120].map(v => chip(prefs.intro === v, 'data-intro="' + v + '"', v + ' s')).join('') + '</div>';
+    }
+
+    $('btn-pro').addEventListener('click', e => {
+      const p = $('pro-panel');
+      if (!p.hidden) { p.hidden = true; return; }
+      renderPro(); p.hidden = false;
+      const r = e.currentTarget.getBoundingClientRect();
+      p.style.left = Math.max(10, Math.min(r.left, innerWidth - p.offsetWidth - 10)) + 'px';
+      p.style.top = (r.bottom + 6 + p.offsetHeight < innerHeight ? r.bottom + 6 : Math.max(10, r.top - p.offsetHeight - 6)) + 'px';
+      $('sleep-sel').value = sleepEnd ? 'end' : '0';
+    });
+    $('pro-panel').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const d = b.dataset;
+      if (d.speed) setSpeed(+d.speed);
+      else if (d.fit) { prefs.fit = d.fit; savePrefs(); applyPrefs(); }
+      else if (d.sub) { prefs.sub = d.sub; savePrefs(); applyPrefs(); }
+      else if (d.shift) return shiftSubs(+d.shift);
+      else if (d.ab === 'a') { abA = video.currentTime; if (abB != null && abB <= abA) abB = null; osd('Repeat from ' + tfmt(abA)); }
+      else if (d.ab === 'b') { if (abA == null) abA = 0; if (video.currentTime > abA) { abB = video.currentTime; osd('Repeating ' + tfmt(abA) + ' – ' + tfmt(abB)); } }
+      else if (d.ab === 'off') { abA = abB = null; osd('Repeat off'); }
+      else if (d.intro) { prefs.intro = +d.intro; savePrefs(); }
+      renderPro();
+    });
+    $('pro-panel').addEventListener('change', e => {
+      if (e.target.id !== 'sleep-sel') return;
+      const v = e.target.value;
+      sleepEnd = v === 'end'; sleepAt = /^\d+$/.test(v) && v !== '0' ? Date.now() + v * 60000 : 0;
+      osd(v === '0' ? 'Sleep timer off' : 'Sleep timer on'); renderPro(); $('sleep-sel').value = v;
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('pro-panel').hidden) { e.stopPropagation(); $('pro-panel').hidden = true; } }, true);
+    // composedPath still includes the panel when the clicked button was just redrawn
+    document.addEventListener('click', e => { if (!$('pro-panel').hidden && !e.composedPath().some(n => n === $('pro-panel') || n === $('btn-pro'))) $('pro-panel').hidden = true; });
+
+    video.addEventListener('timeupdate', () => {
+      if (abA != null && abB != null && video.currentTime >= abB) video.currentTime = abA;
+      if (sleepAt && Date.now() >= sleepAt) { sleepAt = 0; video.pause(); playerMsg('Sleep timer: paused.'); }
+      const showSkip = playingItem && introDoneFor !== playingItem.url && video.currentTime > 3 && video.currentTime < 300;
+      $('btn-skip-intro').style.display = showSkip ? 'inline-flex' : 'none';
+    });
+    video.addEventListener('ended', () => { if (sleepEnd) { sleepEnd = false; queue = playingItem ? [playingItem] : queue; playerMsg('Sleep timer: stopped after this video.'); } }, true);
+    $('btn-skip-intro').addEventListener('click', () => {
+      introDoneFor = playingItem && playingItem.url;
+      video.currentTime = Math.min(video.duration || Infinity, video.currentTime + prefs.intro);
+      osd('Skipped ' + prefs.intro + ' s');
+    });
+
+    // Phones: double-tap the left or right side of the picture to skip 10 s.
+    let lastTap = { t: 0, side: '' };
+    $('player-section').addEventListener('touchend', e => {
+      if (e.target.closest('.plyr__controls, .player-controls-bar, button, select')) return;
+      const vr = video.getBoundingClientRect(), x = e.changedTouches[0].clientX, y = e.changedTouches[0].clientY;
+      if (y < vr.top || y > vr.bottom) return;
+      const side = x < vr.left + vr.width * 0.4 ? 'left' : x > vr.right - vr.width * 0.4 ? 'right' : '';
+      const now = Date.now();
+      if (side && side === lastTap.side && now - lastTap.t < 320) {
+        e.preventDefault();
+        video.currentTime += side === 'left' ? -10 : 10;
+        osd(side === 'left' ? '⏪ 10 s' : '10 s ⏩');
+        lastTap = { t: 0, side: '' };
+      } else lastTap = { t: now, side: side };
+    }, { passive: false });
+
+    /* ---------- pre-buffering: start downloading before Play is pressed ---------- */
+    let warmUrl = '', hoverTimer = null;
+    const blocked = it => location.protocol === 'https:' && /^http:\/\//i.test(it.url);
+    function warm(it, full) {
+      if (!it || it.type !== 'video' || blocked(it) || playingItem) return;   // never interrupt what's playing
+      video.preload = full ? 'auto' : 'metadata';
+      if (warmUrl === it.url) return;
+      warmUrl = it.url;
+      video.src = it.url;
+      const w = watch[it.url];
+      video.onloadedmetadata = () => { if (w && w.t) video.currentTime = w.t; };   // buffer from the resume point
+    }
+    function coolDown() { if (!playingItem && warmUrl) { warmUrl = ''; video.removeAttribute('src'); video.load(); } }
+
+    $('catalog-container').addEventListener('mouseover', e => {
+      clearTimeout(hoverTimer);
+      const card = e.target.closest('.movie-card, .list-row');
+      if (card) hoverTimer = setTimeout(() => warm(reg[+card.dataset.k], false), 400);   // only cards you rest on
+    });
+    $('hero-play').addEventListener('mouseenter', () => warm(heroItem, true));
+
+    let queue = [];   // videos of the folder you started from, in the order shown
     function playVideo(it) {
+      saveProgress(true);
+      const vids = shownVideos.some(v => v.url === it.url) ? shownVideos : sortItems(allItems.filter(i => i.type === 'video'));
+      if (!queue.some(q => q.url === it.url)) queue = vids.some(v => v.url === it.url) ? vids : [it];
+      playingItem = it;
+      const i = queue.findIndex(q => q.url === it.url), next = queue[i + 1];
+      $('btn-prev').disabled = i <= 0;
+      $('btn-next').disabled = !next;
+      $('player-next-up').textContent = next ? 'Next: ' + next.cleanTitle : '';
+      $('player-section').style.display = 'block';
+      document.body.style.overflow = 'hidden';
       $('player-movie-title').textContent = it.cleanTitle;
       $('player-new-tab').href = it.url;
-      $('player-section').style.display = 'block';
-      player.source = { type: 'video', sources: [{ src: it.url, type: 'video/' + (it.ext || 'mp4').toLowerCase() }] };
-      player.play();
+
+      abA = abB = null; introDoneFor = null; $('pro-panel').hidden = true;
+
+      // This page is https; browsers refuse http:// video inside it. A new tab or VLC still works.
+      if (blocked(it)) {
+        warmUrl = ''; video.removeAttribute('src'); video.load();
+        return playerMsg('This file is on an http:// server, which browsers block inside this page. Use Open in New Tab or Open with…, or serve your NAS over https.');
+      }
+      playerMsg(['MP4', 'M4V', 'WEBM', 'OGV', 'MOV'].includes(it.ext) ? '' : it.ext + ' files often play without sound or not at all in browsers. Use Open with… (VLC, Infuse...), or convert them with faststart.sh.');
+      if (warmUrl !== it.url) {   // not pre-buffered yet
+        video.src = it.url;
+        const w = watch[it.url];
+        video.onloadedmetadata = () => { if (w && w.t) video.currentTime = w.t; };   // seeking before metadata is ignored
+      }
+      warmUrl = it.url;
+      video.preload = 'auto';
+      setupSubs(it);
+      setupAudio();
+      video.play().catch(() => {});
     }
 
-    $('btn-close-player').addEventListener('click', () => {
-      player.stop();
-      $('player-section').style.display = 'none';
+    video.addEventListener('error', () => {
+      if (!playingItem || !video.getAttribute('src')) return;
+      playerMsg(['MP4', 'M4V', 'WEBM', 'OGV'].includes(playingItem.ext)
+        ? 'Could not load this video. The server may be offline, slow, or blocking it. Try Open in New Tab or Open with….'
+        : 'The browser could not play this ' + playingItem.ext + ' file. Use Open with… (VLC plays it), or convert it to MP4 (H.264 + AAC).');
+    });
+    video.addEventListener('waiting', () => { if (video.currentTime < 1) playerMsg('Buffering... a slow start usually means the server is slow or the MP4 is not "faststart".'); });
+    video.addEventListener('playing', () => { if (/^Buffering/.test($('player-msg').textContent)) playerMsg(''); });
+    video.addEventListener('timeupdate', () => saveProgress(false));
+    let audioCheckFor = null;
+    video.addEventListener('playing', () => {
+      if (!playingItem || audioCheckFor === playingItem.url || !('webkitAudioDecodedByteCount' in video)) return;
+      const it = playingItem; audioCheckFor = it.url;
+      setTimeout(() => {
+        if (playingItem !== it || video.paused || video.webkitAudioDecodedByteCount > 0) return;
+        playerMsg("No sound? This file's audio format may not play in browsers. Use Open with… (VLC), or convert it with faststart.sh.");
+      }, 4000);
+    });
+    video.addEventListener('ended', () => {
+      if (!playingItem) return;
+      delete watch[playingItem.url]; store.set('OPENFLIX_WATCH_HISTORY', watch);
+      const next = step(1);
+      if (next) { playerMsg('Up next: ' + next.cleanTitle + '...'); setTimeout(() => { if (playingItem && video.ended) playVideo(next); }, 3000); }
+    });
+    function step(d) { const i = queue.findIndex(q => playingItem && q.url === playingItem.url); return i < 0 ? null : queue[i + d] || null; }
+    $('btn-next').addEventListener('click', () => { const n = step(1); if (n) playVideo(n); });
+    $('btn-prev').addEventListener('click', () => { const p = step(-1); if (p) playVideo(p); });
+
+    document.addEventListener('keydown', e => {
+      if ($('player-section').style.display !== 'block' || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+      const k = e.key.toLowerCase();
+      const own = e.target === video || (e.target.closest && e.target.closest('.plyr'));   // the player already handles its own keys
+      if (k === ' ' && !own) { e.preventDefault(); video.paused ? video.play() : video.pause(); }
+      else if (k === 'arrowright' && !own) video.currentTime += 10;
+      else if (k === 'arrowleft' && !own) video.currentTime -= 10;
+      else if (k === 'f' && !own) plyr ? plyr.fullscreen.toggle() : (document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen && video.requestFullscreen());
+      else if (k === 'n') $('btn-next').click();
+      else if (k === ']' || k === '[') { const i = SPEEDS.indexOf(prefs.speed); setSpeed(SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (i < 0 ? 2 : i) + (k === ']' ? 1 : -1)))]); }
+      else if (k === 'g') shiftSubs(-0.5);
+      else if (k === 'h') shiftSubs(0.5);
+      else if (k === 'z') cycleFit();
+      else if (k === 'escape' && !document.fullscreenElement) closePlayer();
     });
 
+    function saveProgress(now) {
+      if (!playingItem || !video.duration || (!now && Date.now() - lastSave < 5000)) return;   // write every 5 s, not 4x a second
+      lastSave = Date.now();
+      const t = video.currentTime, d = video.duration;
+      if (t < 30 || t > d - 120) delete watch[playingItem.url];   // barely started or basically finished
+      else watch[playingItem.url] = { t: t, d: d, at: Date.now(), item: playingItem };
+      store.set('OPENFLIX_WATCH_HISTORY', watch);
+    }
+
+    function closePlayer() {
+      saveProgress(true);
+      video.pause(); video.removeAttribute('src'); video.load();
+      $('pro-panel').hidden = true; $('btn-skip-intro').style.display = 'none';
+      playingItem = null; warmUrl = ''; queue = [];
+      clearTracks(); $('audio-select').style.display = 'none';
+      document.body.style.overflow = '';
+      $('player-section').style.display = 'none';
+      if ($('nav').querySelector('.active').dataset.nav === 'all') renderCatalog(allItems, true);   // refresh progress bars
+    }
+    $('btn-close-player').addEventListener('click', closePlayer);
+    window.addEventListener('beforeunload', () => saveProgress(true));
+
+    $('btn-copy').addEventListener('click', () => {
+      if (!playingItem) return;
+      const label = $('btn-copy').querySelector('span');
+      const ok = () => { label.textContent = 'Copied'; setTimeout(() => label.textContent = 'Copy Link', 1500); };
+      navigator.clipboard ? navigator.clipboard.writeText(playingItem.url).then(ok, () => prompt('Copy this link:', playingItem.url)) : prompt('Copy this link:', playingItem.url);
+    });
+
+    /* ---------- nav, search, crumbs ---------- */
+    function setNav(name) { $('nav').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.nav === name)); }
+    $('nav').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      setNav(b.dataset.nav);
+      if (b.dataset.nav === 'all') renderCatalog(allItems, true);
+      else if (b.dataset.nav === 'mylist') renderCatalog(myList, false);
+      else if (b.dataset.nav === 'allvideos') showLibrary();
+      else renderCatalog(allItems.filter(i => i.type === b.dataset.nav), false);
+    });
+    $('search-input').addEventListener('input', () => {
+      const q = $('search-input').value.trim().toLowerCase();
+      searchShown = PAGE;
+      if (navNow() === 'allvideos') return renderLibrary();
+      if (!q) return renderCatalog(allItems, true);
+      if (index && index.meta) return renderSearch(q);   // whole library via the index sheet
+      renderCatalog(allItems.concat(myList).filter((i, n, a) => a.findIndex(x => x.url === i.url) === n && i.cleanTitle.toLowerCase().includes(q)), false);
+    });
+    $('search-input').addEventListener('keydown', e => { if (e.key === 'Enter' && $('search-input').value.trim()) searchArchive($('search-input').value.trim()); });
+    $('breadcrumbs').addEventListener('click', e => {
+      const b = e.target.closest('.crumb'); if (!b) return;
+      if (b.dataset.back && backStack.length) { const prev = backStack.pop(); load(prev, false); }
+      else if (b.dataset.refresh) load(curUrl, false, true);
+      else if (b.dataset.url && !b.classList.contains('here')) load(b.dataset.url, true);
+    });
+    $('logo').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    /* ---------- sources & settings ---------- */
     function renderSourceSelect() {
       $('source-select').innerHTML = sources.map((s, i) => '<option value="' + i + '">' + esc(s.name) + '</option>').join('');
-      if (sources.length && !rootUrl) { rootUrl = sources[0].url; load(rootUrl, false); }
     }
-    $('source-select').addEventListener('change', e => {
-      const s = sources[+e.target.value];
-      if (s) { rootUrl = s.url; load(rootUrl, false); }
-    });
+    function openSource(i) {
+      const s = sources[i]; if (!s) return;
+      backStack = []; rootUrl = s.url; load(s.url, false);
+    }
+    $('source-select').addEventListener('change', e => openSource(+e.target.value));
 
     function renderModalSources() {
       $('modal-source-list').innerHTML = sources.map((s, i) =>
         '<div class="source-item"><div><b>' + esc(s.name) + '</b><br><small style="color:#888;">' + esc(s.url) + '</small></div>' +
-        '<button style="background:none;border:none;color:var(--red);cursor:pointer;" data-del="' + i + '"><i class="fa-solid fa-trash"></i></button></div>'
-      ).join('') || '<div style="color:#888;font-size:13px;">No sources added yet.</div>';
-      $('tmdb-key-input').value = tmdbKey;
+        '<button style="background:none;border:none;color:var(--red);cursor:pointer;" data-del="' + i + '" aria-label="Delete ' + esc(s.name) + '"><i class="fa-solid fa-trash"></i></button></div>'
+      ).join('') || '<div style="color:#888;font-size:13px;">No sources yet. Add one below, or type it into the Sources tab of the spreadsheet.</div>';
     }
     $('modal-source-list').addEventListener('click', e => {
       const b = e.target.closest('[data-del]'); if (!b) return;
-      sources.splice(+b.dataset.del, 1);
-      localStorage.setItem('OPENFLIX_SOURCES', JSON.stringify(sources));
-      renderModalSources(); renderSourceSelect();
+      sources.splice(+b.dataset.del, 1); renderModalSources(); saveSettings();
     });
-
-    $('btn-save-settings').addEventListener('click', () => {
+    $('btn-add-source').addEventListener('click', () => {
       const name = $('new-source-name').value.trim();
       let url = $('new-source-url').value.trim();
-      if (name && url) {
-        if (!url.endsWith('/')) url += '/';
-        sources.push({ name: name, url: url });
-        localStorage.setItem('OPENFLIX_SOURCES', JSON.stringify(sources));
-        $('new-source-name').value = ''; $('new-source-url').value = '';
-      }
-      tmdbKey = $('tmdb-key-input').value.trim();
-      localStorage.setItem('OPENFLIX_TMDB_KEY', tmdbKey);
-      renderModalSources(); renderSourceSelect();
-      $('settings-modal').style.display = 'none';
+      if (!name || !/^https?:\/\/\S+$/i.test(url)) return msg('Enter a name and a link starting with http:// or https://', true);
+      if (!url.endsWith('/')) url += '/';
+      sources.push({ name: name, url: url });
+      $('new-source-name').value = ''; $('new-source-url').value = '';
+      renderModalSources(); saveSettings();
+    });
+    $('btn-save-settings').addEventListener('click', () => saveSettings(true));
+
+    $('index-settings').addEventListener('click', e => { const a = e.target.closest('[data-action]'); if (a) libraryAction(a.dataset.action); });
+    $('index-settings').addEventListener('change', e => {
+      if (e.target.id !== 'daily-index') return;
+      const on = e.target.checked;
+      google.script.run
+        .withSuccessHandler(r => { if (index) index.daily = r.daily; msg(r.daily ? 'The index will rebuild every night.' : 'Nightly rebuild turned off.', false); })
+        .withFailureHandler(err => { e.target.checked = !on; msg('Could not change it: ' + err.message, true); })
+        .setDailyIndex(on);
     });
 
-    $('btn-settings').addEventListener('click', () => { renderModalSources(); $('settings-modal').style.display = 'flex'; });
-    document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => $(b.dataset.close).style.display = 'none'));
-
-    document.querySelectorAll('#nav button').forEach(btn => {
-      btn.addEventListener('click', e => {
-        document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentNav = e.target.dataset.nav;
-        renderCatalog(allItems);
-      });
-    });
-
-    $('search-input').addEventListener('input', e => {
-      const q = e.target.value.toLowerCase();
-      if (!q) { renderCatalog(allItems); return; }
-      const filtered = allItems.filter(i => i.cleanTitle.toLowerCase().includes(q));
-      renderCatalog(filtered);
-    });
-
-    function renderCrumbs() {
-      $('breadcrumbs').innerHTML = '<button class="crumb here">Library</button>';
+    function msg(t, bad) { $('settings-msg').textContent = t; $('settings-msg').style.color = bad ? '#ff6b6b' : '#46d369'; }
+    function saveSettings(closeAfter) {
+      const key = $('setting-tmdb-key').value.trim();
+      renderSourceSelect();
+      msg('Saving...', false);
+      google.script.run
+        .withSuccessHandler(r => {
+          msg('Saved to the Sources tab.', false);
+          if (r && r.sources) { sources = r.sources; renderSourceSelect(); renderModalSources(); }
+          if (sources.length && !rootUrl) { openSource(0); loadIndex(); }   // first source just added
+          const keyChanged = key !== tmdbKey; tmdbKey = key;
+          if (keyChanged) fetchInfo(allItems);
+          if (closeAfter) closeModal('settings-modal');
+        })
+        .withFailureHandler(e => msg('Not saved: ' + e.message, true))
+        .saveSettings(sources, key);
     }
 
+    /* ---------- modals ---------- */
+    function openModal(id) { $(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+    function closeModal(id) {
+      $(id).style.display = 'none';
+      const anyOpen = [...document.querySelectorAll('.modal-overlay')].some(o => o.style.display === 'flex');
+      if (!anyOpen && $('player-section').style.display !== 'block') document.body.style.overflow = '';
+      if (id === 'detail-modal') coolDown();   // closed without playing: stop downloading
+    }
+    $('btn-settings').addEventListener('click', () => { renderModalSources(); renderIndexSettings();
+ $('setting-tmdb-key').value = tmdbKey; msg('', false); openModal('settings-modal'); });
+    document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+    document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); }));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(o => closeModal(o.id)); });
+
+    /* ---------- start ---------- */
     renderSourceSelect();
+    function startApp() {
+      renderSourceSelect();
+      loadCovers();
+      if (sources.length) { openSource(0); loadIndex(); }
+      else $('catalog-container').innerHTML = '<div class="state">No sources yet. Click Sources to add your NAS folder link.</div>';
+      try {   // reopen the video after switching player
+        const again = JSON.parse(sessionStorage.getItem('OPENFLIX_REOPEN') || 'null');
+        sessionStorage.removeItem('OPENFLIX_REOPEN');
+        if (again && again.url) playVideo(again);
+      } catch (x) {}
+    }
+
+    function showConnect(msg) {
+      $('catalog-container').innerHTML =
+        '<div class="state" style="max-width:520px;margin:0 auto;text-align:left;">' +
+        '<h2 style="color:#fff;margin-bottom:10px;">Connect OpenFlix</h2>' +
+        '<p style="font-size:14px;line-height:1.5;margin-bottom:14px;">Paste your Apps Script web app link (it ends in <b>/exec</b>) and the family code. You only do this once on each device.</p>' +
+        '<input id="api-url" type="url" placeholder="https://script.google.com/macros/s/…/exec" aria-label="Web app link" style="width:100%;padding:10px;margin-bottom:10px;background:#000;border:1px solid #444;color:#fff;border-radius:4px;">' +
+        '<input id="api-code" type="password" placeholder="Family code" aria-label="Family code" style="width:100%;padding:10px;margin-bottom:12px;background:#000;border:1px solid #444;color:#fff;border-radius:4px;">' +
+        '<button class="btn btn-red" id="api-connect"><i class="fa-solid fa-plug"></i> Connect</button>' +
+        '<div id="api-msg" role="alert" style="margin-top:12px;font-size:13px;color:#ff6b6b;">' + esc(msg || '') + '</div></div>';
+      $('api-connect').addEventListener('click', () => {
+        const c = { url: $('api-url').value.trim(), code: $('api-code').value.trim() };
+        if (!/^https:\/\/script\.google\.com\/\S+\/exec$/.test(c.url)) { $('api-msg').textContent = 'The link should start with https://script.google.com/ and end in /exec.'; return; }
+        $('api-msg').style.color = '#aaa'; $('api-msg').textContent = 'Connecting...';
+        openflixApi.call('boot', [], c).then(r => {
+          try { localStorage.setItem('OPENFLIX_API', JSON.stringify(c)); } catch (e) {}
+          boot(r);
+        }, e => { $('api-msg').style.color = '#ff6b6b'; $('api-msg').textContent = "Couldn't connect: " + e.message; });
+      });
+    }
+
+    function boot(r) { sources = r.sources || []; tmdbKey = r.tmdbKey || ''; startApp(); }
+
+    if (!openflixApi.cfg()) showConnect();
+    else {
+      $('catalog-container').innerHTML = '<div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Connecting...</p></div>';
+      openflixApi.call('boot', []).then(boot, e => showConnect("Couldn't connect: " + e.message));
+    }
+
+    // "Sign out of this device" in Sources settings
+    $('btn-disconnect').addEventListener('click', () => { try { localStorage.removeItem('OPENFLIX_API'); } catch (e) {} location.reload(); });
   </script>
 </body>
 </html>
