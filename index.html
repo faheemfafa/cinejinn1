@@ -222,7 +222,6 @@
       renderCrumbs();
       $('catalog-container').innerHTML = '<div class="state"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top:12px;">Loading directory...</p></div>';
 
-      // Route through Cloudflare worker proxy to bypass 403 blocks and CORS
       fetch(PROXY_URL + encodeURIComponent(url))
         .then(r => r.text())
         .then(html => {
@@ -244,9 +243,6 @@
         if (!href || href.startsWith('?') || href === '../' || href === '/') continue;
 
         let url = new URL(href, baseUrl).href;
-        if (/^http:\/\//i.test(url)) {
-          // Keep proxied video link or raw http link
-        }
         if (seen[url]) continue;
         seen[url] = true;
 
@@ -321,7 +317,6 @@
       $('player-new-tab').href = it.url;
       $('player-section').style.display = 'block';
 
-      // Route video stream through Cloudflare worker proxy if it's an http link
       let streamUrl = it.url;
       if (/^http:\/\//i.test(streamUrl)) {
         streamUrl = PROXY_URL + encodeURIComponent(streamUrl);
@@ -356,6 +351,7 @@
       localStorage.setItem('OPENFLIX_SOURCES', JSON.stringify(sources));
       renderModalSources(); renderSourceSelect();
     });
+
     $('btn-add-source').addEventListener('click', () => {
       const name = $('new-source-name').value.trim();
       let url = $('new-source-url').value.trim();
@@ -364,7 +360,16 @@
       sources.push({ name: name, url: url });
       localStorage.setItem('OPENFLIX_SOURCES', JSON.stringify(sources));
       $('new-source-name').value = ''; $('new-source-url').value = '';
-      renderModalSources(); renderSourceSelect();
+      renderModalSources(); 
+      renderSourceSelect();
+
+      // Automatically select and load the new source
+      const newIndex = sources.length - 1;
+      $('source-select').value = newIndex;
+      rootUrl = url;
+      load(rootUrl, false);
+      $('settings-modal').style.display = 'none';
+      document.body.style.overflow = '';
     });
 
     $('btn-settings').addEventListener('click', () => { renderModalSources(); $('settings-modal').style.display = 'flex'; });
